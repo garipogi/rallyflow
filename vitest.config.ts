@@ -7,6 +7,8 @@ export default defineConfig({
     environment: 'node',
     globals: true,
     passWithNoTests: false,
-    testTimeout: 20000,
+    // CI runners (Windows especially) do real fsyncs on every SQLite commit and are
+    // far slower than a laptop, so the long property tests get more time there.
+    testTimeout: process.env.CI ? 120000 : 20000,
   },
 });
