@@ -1,0 +1,21 @@
+{
+  "name": "pickleball-open-play",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Offline desktop app for running pickleball open play",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "loop:status": "node .loop/loop.mjs status",
+    "loop:check": "node .loop/loop.mjs check"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  }
+}

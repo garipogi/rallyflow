@@ -1,0 +1,61 @@
+{
+  "ceiling": 30,
+  "sourceDirs": ["src"],
+  "protectedDirs": ["tests", ".loop", ".claude"],
+  "forbiddenInSource": "\\b(TODO|FIXME|XXX)\\b|not implemented|unimplemented|placeholder|@ts-ignore|@ts-nocheck|eslint-disable",
+  "forbiddenInTests": "\\b(it|test|describe)\\.(skip|only|todo)\\b|\\bx(it|describe|test)\\(",
+  "phases": [
+    {
+      "id": 1,
+      "name": "Foundation",
+      "goal": "Electron + React + TS app shell, SQLite schema with migrations and schema version, session lifecycle (create, reopen, finish, review, read-only when completed), player registry with stable ids, nicknames and duplicate-name handling, check-in and availability, 2–4 court configuration, transactional writes and startup recovery of unfinished sessions.",
+      "acceptance": ["AC-02", "AC-11", "AC-12"],
+      "testDir": "tests/phase1",
+      "commands": ["npm run -s typecheck", "npx vitest run"],
+      "rubric": "phase-1.md",
+      "humanReviewTests": false
+    },
+    {
+      "id": 2,
+      "name": "Scoring engine",
+      "goal": "Pure-TypeScript scoring engine in src/core/scoring: standard side-out scoring for singles and doubles, serving team, server number, first-server exception at the start of a doubles game, service court and player positions, faults and side-outs, configurable target (11/15/21) with win by two, event-sourced history, undo, correction of an earlier event with replay, reopen of a completed game without duplicate completion, persisted ScoreEvents so a game reconstructs after restart.",
+      "acceptance": ["AC-05", "AC-06", "AC-07", "AC-08", "AC-09", "AC-10"],
+      "testDir": "tests/phase2",
+      "commands": ["npm run -s typecheck", "npx vitest run"],
+      "rubric": "phase-2.md",
+      "humanReviewTests": true
+    },
+    {
+      "id": 3,
+      "name": "Rotation and court operations",
+      "goal": "Rotation engine in src/core/rotation implementing docs/DECISIONS.md D1–D7: waiting-time queue, explainable next-game recommendations per free court, singles and doubles, assignment integrity, manual override with recorded reason, declined-turn policy (configurable), optional skill balancing and partner rotation that never silently override the queue, RotationEvent logging.",
+      "acceptance": ["AC-03", "AC-04", "AC-16", "AC-17"],
+      "testDir": "tests/phase3",
+      "commands": ["npm run -s typecheck", "npx vitest run"],
+      "rubric": "phase-3.md",
+      "humanReviewTests": false
+    },
+    {
+      "id": 4,
+      "name": "Statistics and reporting",
+      "goal": "Statistics derived from finalized games only, session and historical leaderboards with thresholds and documented tie rules (D9), partner history, recalculation after corrections, CSV and XLSX export (D11) that never mutates source data, manual backup and validated restore (D10) that rejects corrupt or foreign files safely.",
+      "acceptance": ["AC-13", "AC-14", "AC-15"],
+      "testDir": "tests/phase4",
+      "commands": ["npm run -s typecheck", "npx vitest run"],
+      "rubric": "phase-4.md",
+      "humanReviewTests": false
+    },
+    {
+      "id": 5,
+      "name": "Display and release validation",
+      "goal": "Organizer UI for the full open-play workflow, large-screen display window with no organizer controls, optional timer independent of scoring, offline operation with no network requests, end-to-end tests through Playwright Electron, electron-builder config for Windows and macOS, and a GitHub Actions matrix (windows-latest, macos-latest) that runs the full suite.",
+      "acceptance": ["AC-01", "AC-18", "AC-19", "AC-20"],
+      "testDir": "tests/phase5",
+      "commands": ["npm run -s typecheck", "npx vitest run", "npm run -s build", "npm run -s e2e"],
+      "rubric": "phase-5.md",
+      "requiredFiles": [".github/workflows/ci.yml", "electron-builder.yml", "docs/USER_GUIDE.md", "docs/INSTALL.md"],
+      "humanReviewTests": false,
+      "externalGates": ["AC-20 is only fully met when the CI matrix is green on GitHub for both Windows and macOS. The organizer confirms this by hand."]
+    }
+  ]
+}
