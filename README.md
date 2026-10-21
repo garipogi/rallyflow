@@ -48,6 +48,7 @@ Get the latest installers from this repository's **Releases** page (`/releases/l
 The installers are not code-signed yet, so the first launch needs one extra click:
 
 - **Mac:** drag RallyFlow into Applications, Control-click it and choose **Open**, then **Open** again. If it is still blocked: System Settings › Privacy & Security › **Open Anyway**.
+**"RallyFlow is damaged and can't be opened" (Mac, version 1.1.0 only):** download 1.1.1 or newer. Or open Terminal and run `xattr -cr /Applications/RallyFlow.app`, then open RallyFlow again.
 - **Windows:** when SmartScreen shows "Windows protected your PC", click **More info** › **Run anyway**.
 
 Full instructions: [docs/INSTALL.md](docs/INSTALL.md).

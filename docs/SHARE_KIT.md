@@ -22,6 +22,8 @@ Brand files: `site/assets/logo.svg` (horizontal lockup), `build/icon.png` (1024 
 >
 > **Mac:** open the `.dmg` and drag **RallyFlow** into **Applications**. The first time, Control-click (right-click) RallyFlow in Applications and choose **Open**, then **Open** again. If your Mac still refuses, go to **System Settings › Privacy & Security**, scroll down and click **Open Anyway**. Choose the "arm64" file for M1–M4 Macs and "x64" for Intel Macs (Apple menu › About This Mac shows which you have).
 >
+> **"RallyFlow is damaged and can't be opened" (Mac, version 1.1.0 only):** download 1.1.1 or newer. Or open Terminal and run `xattr -cr /Applications/RallyFlow.app`, then open RallyFlow again.
+>
 > **Windows:** run `RallyFlow-Setup-1.0.0.exe`. If you see "Windows protected your PC", click **More info**, then **Run anyway**, and follow the installer.
 >
 > The warning appears only because the app isn't code-signed yet. RallyFlow runs entirely offline and keeps your data on your computer.

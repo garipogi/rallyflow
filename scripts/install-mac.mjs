@@ -10,7 +10,7 @@
 // Usage: npm run install-app            (add -- --no-build to reuse an existing out/ build)
 import { execFileSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
-import { homedir } from 'node:os';
+import { homedir, tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -40,10 +40,16 @@ if (!process.argv.includes('--no-build')) {
 // THIRD_PARTY_NOTICES.md ships inside the app (electron-builder extraResources).
 run(process.execPath, [join(root, 'scripts', 'third-party-notices.mjs')]);
 
+// Package outside the project: an iCloud-synced Desktop keeps re-adding Finder info to
+// app bundles, which makes the ad-hoc code signature fail.
+const releaseDir = join(tmpdir(), 'rallyflow-release');
+rmSync(releaseDir, { recursive: true, force: true });
 console.log(`\n> Packaging ${APP_NAME}.app (${arch}, unpacked)`);
-run(bin('electron-builder'), ['--mac', 'dir', `--${arch}`, '--publish', 'never', `-c.electronDist=${electronDist}`]);
+run(bin('electron-builder'), [
+  '--mac', 'dir', `--${arch}`, '--publish', 'never',
+  `-c.electronDist=${electronDist}`, `-c.directories.output=${releaseDir}`,
+]);
 
-const releaseDir = join(root, 'release');
 const outDir = readdirSync(releaseDir)
   .map((d) => join(releaseDir, d))
   .find((d) => /^mac/.test(d.split('/').pop() ?? '') && existsSync(join(d, `${APP_NAME}.app`)));

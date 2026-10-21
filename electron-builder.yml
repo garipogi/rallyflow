@@ -39,6 +39,7 @@ nsis:
   allowToChangeInstallationDirectory: true
   shortcutName: RallyFlow
   uninstallDisplayName: RallyFlow
+afterPack: scripts/after-pack.cjs
 mac:
   target:
     - target: dmg
@@ -51,7 +52,14 @@ mac:
         - arm64
   category: public.app-category.sports
   icon: build/icon.icns
-  identity: null
+  # Ad-hoc signature (free, no Apple account). Apple-silicon Macs refuse to open a
+  # downloaded app with no valid signature and call it "damaged"; ad-hoc signing
+  # turns that into the normal "unidentified developer" prompt. For full trust,
+  # replace with a Developer ID identity and notarize (docs/RELEASING.md).
+  identity: '-'
+  # Hardened runtime only matters for notarization; with an ad-hoc signature it
+  # would block loading the bundled native module (better-sqlite3).
+  hardenedRuntime: false
   artifactName: ${productName}-${version}-${arch}.${ext}
 dmg:
   title: ${productName} ${version}

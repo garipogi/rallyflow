@@ -21,6 +21,7 @@ RallyFlow (*Every game. Every player. In rhythm.*) is the offline pickleball ope
 1. Copy the `.dmg` to the Mac and double-click it.
 2. Drag **RallyFlow** into **Applications**.
 3. The app is not code signed or notarized (decision D13), so the first launch is blocked by Gatekeeper. Control-click (right-click) the app in Applications, choose **Open**, then **Open** again in the dialog. If macOS still refuses, open **System Settings > Privacy & Security** and choose **Open Anyway** next to the app's name. You only do this once.
+**"RallyFlow is damaged and can't be opened" (Mac, version 1.1.0 only):** download 1.1.1 or newer. Or open Terminal and run `xattr -cr /Applications/RallyFlow.app`, then open RallyFlow again.
 
 ## Install on this Mac (from the source folder)
 

@@ -1,6 +1,6 @@
 {
   "name": "pickleball-open-play",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "private": true,
   "description": "RallyFlow — Offline Pickleball Open Play Manager. Every game. Every player. In rhythm.",
   "author": "RallyFlow",
@@ -24,7 +24,7 @@
     "install-app": "node scripts/install-mac.mjs",
     "icons": "node scripts/make-icons.mjs",
     "notices": "node scripts/third-party-notices.mjs",
-    "dist:mac": "node scripts/third-party-notices.mjs && electron-vite build && electron-builder --mac dmg zip --arm64 --publish never -c.electronDist=node_modules/electron/dist",
+    "dist:mac": "node scripts/dist-mac.mjs",
     "screenshots": "electron-vite build && node scripts/marketing-screenshots.mjs"
   },
   "devDependencies": {

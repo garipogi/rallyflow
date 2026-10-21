@@ -11,6 +11,10 @@ Offline Pickleball Open Play Manager for macOS and Windows.
 
 The `.zip` files contain the same Mac app without the disk image.
 
+### What's new in 1.1.1
+
+- **Fixed:** on Apple-silicon Macs, a downloaded copy of 1.1.0 could be refused with "RallyFlow is damaged and can't be opened". The Mac app is now properly (ad-hoc) signed, so macOS shows its normal first-open prompt instead.
+
 ### First open
 
 - **Mac:** drag RallyFlow to Applications, then Control-click it and choose **Open** (once). If macOS still blocks it: System Settings › Privacy & Security › **Open Anyway**.

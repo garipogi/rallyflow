@@ -2,6 +2,11 @@
 
 All notable changes to RallyFlow are listed here. Versions follow [Semantic Versioning](https://semver.org).
 
+## 1.1.1
+
+- Fixed: on Apple-silicon Macs a downloaded copy could be refused as "damaged". Mac builds are now ad-hoc signed (free, no Apple account), so macOS shows the normal first-open prompt.
+- Local Mac builds (`npm run dist:mac`, `npm run install-app`) now package outside the project folder, because an iCloud-synced Desktop breaks code signing.
+
 ## [1.1.0] — 2026-10-22
 
 ### Awards ceremony
