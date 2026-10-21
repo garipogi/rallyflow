@@ -1,0 +1,7 @@
+{
+  "phase": 1,
+  "verdict": "PASS",
+  "notes": "Phase 1 all rubric items pass: schema/indexes db.ts:11-120, idempotent migrate :144, lifecycle sessions.ts:77-118 + guards.ts:9, roster removal roster.ts:120, dup/existing-player roster.ts:56-80 + App.tsx:59,162-187 via api.ts:37-38/handlers.ts:65-66, recovery sessions.ts:121, confirm delete :104, electron-vite build OK with local bundle + CSP",
+  "treeHash": "f75d8c1b44c0b536e2f2b73c61a435592de29b27d6e97546fa14621bbf16fe53",
+  "at": "2026-10-21T07:21:09.212Z"
+}

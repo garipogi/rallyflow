@@ -1,21 +1,50 @@
 {
   "name": "pickleball-open-play",
-  "version": "0.0.0",
+  "version": "1.1.0",
   "private": true,
-  "description": "Offline desktop app for running pickleball open play",
+  "description": "RallyFlow — Offline Pickleball Open Play Manager. Every game. Every player. In rhythm.",
+  "author": "RallyFlow",
+  "license": "SEE LICENSE IN LICENSE",
   "type": "module",
   "engines": {
     "node": ">=20"
   },
+  "main": "./out/main/index.js",
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
     "loop:status": "node .loop/loop.mjs status",
-    "loop:check": "node .loop/loop.mjs check"
+    "loop:check": "node .loop/loop.mjs check",
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "start": "electron-vite preview",
+    "rebuild:electron": "electron-builder install-app-deps",
+    "rebuild:node": "npm rebuild better-sqlite3",
+    "e2e": "electron-vite build && playwright test",
+    "install-app": "node scripts/install-mac.mjs",
+    "icons": "node scripts/make-icons.mjs",
+    "notices": "node scripts/third-party-notices.mjs",
+    "dist:mac": "node scripts/third-party-notices.mjs && electron-vite build && electron-builder --mac dmg zip --arm64 --publish never -c.electronDist=node_modules/electron/dist",
+    "screenshots": "electron-vite build && node scripts/marketing-screenshots.mjs"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^26.6.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "electron": "^45.0.0",
+    "electron-builder": "^26.15.3",
+    "electron-vite": "^6.0.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
     "typescript": "^7.0.2",
+    "vite": "^8.3.5",
     "vitest": "^5.0.5"
+  },
+  "dependencies": {
+    "better-sqlite3": "^13.0.3",
+    "exceljs": "^4.4.0"
   }
 }

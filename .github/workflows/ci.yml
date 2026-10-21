@@ -1,0 +1,38 @@
+# AC-20: the full suite must pass on both supported platforms, independently.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    name: Verify (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Typecheck
+        run: npm run -s typecheck
+      - name: Unit and integration tests
+        run: npx vitest run
+      - name: Build
+        run: npm run -s build
+      - name: End-to-end tests (Playwright driving Electron)
+        run: npm run -s e2e
+      - name: Upload e2e screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-screenshots-${{ matrix.os }}
+          path: test-results/
+          if-no-files-found: warn

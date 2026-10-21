@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; base-uri 'self'; form-action 'none'" />
+  <title>RallyFlow Flyer</title>
+  <link rel="icon" type="image/svg+xml" href="assets/icon.svg" />
+  <!-- Printable one-page flyer. Fits both A4 and US Letter: print with "Background graphics" on and margins "Default" or "None". -->
+  <style>
+    @page { margin: 10mm; }
+    * { box-sizing: border-box; }
+    html { background: #dfe7e2; }
+    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; color: #11241b; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .sheet { width: 190mm; height: 257mm; margin: 12mm auto; background: #ffffff; box-shadow: 0 10px 40px rgba(0,0,0,0.18); display: flex; flex-direction: column; overflow: hidden; }
+    .top { background: linear-gradient(160deg, #1d5e43, #0f2a1f); color: #ffffff; padding: 12mm 12mm 0; text-align: center; }
+    .mark { display: inline-flex; align-items: center; gap: 5mm; }
+    .mark img { width: 24mm; height: 24mm; }
+    .word { font-size: 22mm; font-weight: 850; letter-spacing: -0.8mm; line-height: 1; }
+    .word span { color: #5fe0a8; }
+    .tag { margin: 5mm 0 1.5mm; font-size: 8.4mm; font-weight: 800; letter-spacing: -0.2mm; }
+    .desc { margin: 0; font-size: 4.6mm; color: #c4dbcf; text-transform: uppercase; letter-spacing: 0.5mm; font-weight: 700; }
+    .shots { position: relative; height: 62mm; margin-top: 6mm; }
+    .shots img { position: absolute; border-radius: 3mm; border: 1.2mm solid rgba(255,255,255,0.18); box-shadow: 0 4mm 10mm rgba(0,0,0,0.45); }
+    .s1 { width: 104mm; left: 8mm; top: 0; transform: rotate(-3deg); }
+    .s2 { width: 86mm; right: 6mm; top: 10mm; transform: rotate(3deg); }
+    .body { flex: 1; display: grid; grid-template-columns: 1fr 62mm; gap: 8mm; padding: 7mm 12mm 0; }
+    h2 { margin: 0 0 3mm; font-size: 6.4mm; letter-spacing: -0.2mm; }
+    ul { margin: 0; padding: 0; list-style: none; }
+    li { display: flex; gap: 3mm; align-items: flex-start; font-size: 4.2mm; line-height: 1.35; margin-bottom: 2mm; }
+    li b { display: block; }
+    .dot { flex: none; width: 7mm; height: 7mm; border-radius: 2mm; background: #e4f3ea; display: grid; place-items: center; font-size: 4.2mm; }
+    .qrbox { text-align: center; border: 0.6mm solid #d5e3da; border-radius: 4mm; padding: 5mm 4mm; align-self: start; }
+    .qrbox h3 { margin: 0 0 3mm; font-size: 5.2mm; }
+    #qr svg { width: 48mm; height: 48mm; display: block; margin: 0 auto; }
+    .url { margin-top: 3mm; font-size: 2.9mm; font-weight: 700; overflow-wrap: anywhere; color: #145c3d; }
+    .platforms { margin-top: 3mm; font-size: 3.4mm; color: #4a6356; }
+    .bigurl { font-size: 5.4mm; font-weight: 800; color: #145c3d; }
+    .foot { display: flex; justify-content: space-between; align-items: center; padding: 5mm 12mm; border-top: 0.4mm solid #e2ebe5; font-size: 3.4mm; color: #4a6356; margin-top: auto; }
+    .foot strong { color: #11241b; }
+    .toolbar { text-align: center; margin: 6mm 0 0; font-size: 14px; }
+    .toolbar button { font: inherit; font-weight: 700; padding: 8px 18px; border-radius: 999px; border: 0; background: #1d7a52; color: #fff; cursor: pointer; }
+    @media print {
+      html { background: #ffffff; }
+      .sheet { margin: 0 auto; box-shadow: none; }
+      .toolbar { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar"><button type="button" id="print">Print this flyer</button></div>
+  <div class="sheet">
+    <div class="top">
+      <div class="mark"><img src="assets/icon.svg" alt="RallyFlow logo" /><span class="word">Rally<span>Flow</span></span></div>
+      <p class="tag">Every game. Every player. In rhythm.</p>
+      <p class="desc">Offline Pickleball Open Play Manager</p>
+      <div class="shots">
+        <img class="s1" src="assets/screenshots/display.png" alt="Big-screen display with courts and scores" />
+        <img class="s2" src="assets/screenshots/awards-ceremony.png" alt="Awards ceremony" />
+      </div>
+    </div>
+    <div class="body">
+      <div>
+        <h2>Open play that runs itself</h2>
+        <ul>
+          <li><span class="dot">🔄</span><span><b>Fair rotation</b>Whoever waited longest plays next; partners mix automatically.</span></li>
+          <li><span class="dot">🏓</span><span><b>Rally-by-rally scoring</b>Official rules, called score, one-tap undo, game timer.</span></li>
+          <li><span class="dot">📺</span><span><b>Big-screen display</b>Courts, scores and who's next, for everyone to see.</span></li>
+          <li><span class="dot">🏆</span><span><b>Awards ceremony</b>Podium, Player of the Session, printable certificates.</span></li>
+          <li><span class="dot">🔒</span><span><b>Offline &amp; private</b>No internet, no accounts. Your data stays on your laptop.</span></li>
+        </ul>
+      </div>
+      <div class="qrbox">
+        <h3>Get RallyFlow</h3>
+        <div id="qr"></div>
+        <div class="url" id="url"></div>
+        <div class="platforms">Free for Mac &amp; Windows</div>
+      </div>
+    </div>
+    <div class="foot"><span><strong>RallyFlow</strong> · Built for organizers of 16–32 players on 2–4 courts</span><span>© 2026 RallyFlow</span></div>
+  </div>
+  <script src="config.js"></script>
+  <script src="assets/site.js"></script>
+  <script src="assets/qr.js"></script>
+  <script src="assets/flyer.js"></script>
+</body>
+</html>

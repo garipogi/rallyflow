@@ -1,0 +1,10 @@
+{
+  "phase": 4,
+  "lockedAt": "2026-10-21T10:03:18.877Z",
+  "files": {
+    "tests/phase4/ac13.backup.test.ts": "d60c5da09ac04880e6b2761ec88181b52e17c6936e8059f2a75bc6189f073fa1",
+    "tests/phase4/ac14.export.test.ts": "9a8fd591fbd6ac064962593df2d4e5dfe7b9767334be9ff3e200ab8a0db3659c",
+    "tests/phase4/ac15.stats-core.test.ts": "7f2c991222d4d897d8d077615ae69f65d344030a9f3913c4a633b42dc41ce3c1",
+    "tests/phase4/ac15.stats-data.test.ts": "a46a716b0d4d32d037552d7ceb63cb06556ab3b2e4427ecf487bb06c0cf8b393"
+  }
+}

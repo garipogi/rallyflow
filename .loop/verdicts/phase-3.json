@@ -1,0 +1,7 @@
+{
+  "phase": 3,
+  "verdict": "PASS",
+  "notes": "Phase 3 rotation: all 7 phase items + 7 common items PASS; D2 tie-break exact (queue.ts:26-32), D1 default+alternatives, D6/D7 off by default and keep oldest player (recommend.ts:186-205), override requires/stores reason (data/rotation.ts:301-327), open courts not force-filled; core is pure.",
+  "treeHash": "63356f8a80af4568b5a860ad7d9f133bb86c3af7285e5066587786a09d68e5ef",
+  "at": "2026-10-21T09:39:33.192Z"
+}

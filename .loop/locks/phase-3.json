@@ -1,0 +1,11 @@
+{
+  "phase": 3,
+  "lockedAt": "2026-10-21T09:32:51.557Z",
+  "files": {
+    "tests/phase3/ac03.decline.test.ts": "f98af5dbd6727c7c3746899f36abbc5d82b093ed2d24e1648d8ca1d018aed462",
+    "tests/phase3/ac03.queue.test.ts": "0c8bd04f5512af2bcffbc015855f25549b884bae9d8f962b5d477416a5cb32b2",
+    "tests/phase3/ac04.integrity.test.ts": "bf7f5a813922aa888809a5ab0dd6ff66e4cf95c4f53f78f19699dd5e46add7ef",
+    "tests/phase3/ac16.skill-balancing.test.ts": "d3bc2d9f082a910bb0975c2593a5529d1c7bd6ea787acec8bb8406dd08fddc05",
+    "tests/phase3/ac17.partner-rotation.test.ts": "15b2cec03dd83da8611ccf8cc88f399872d722877f96b71a3005b51244ba6199"
+  }
+}

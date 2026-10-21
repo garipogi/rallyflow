@@ -3,6 +3,21 @@ dist/
 out/
 release/
 test-results/
+playwright-report/
+blob-report/
 coverage/
 *.sqlite
 *.db
+# Installers and packaged apps (built locally or by .github/workflows/release.yml)
+*.dmg
+*.exe
+*.blockmap
+*.pkg
+*.msi
+*.AppImage
+/*.zip
+.DS_Store
+# Tracked on purpose (listed so a broader rule above never hides them):
+!site/assets/screenshots/
+!site/assets/screenshots/*.png
+!build/icon.*

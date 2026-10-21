@@ -36,3 +36,9 @@ src/renderer/   React UI (organizer window + large-screen display view)
 ## Native module note
 
 `better-sqlite3` is compiled for Node's ABI in tests and must be rebuilt for Electron's ABI when packaging (`electron-builder install-app-deps`). The phase 1 builder sets this up.
+
+### Native module scripts (phase 1)
+
+- `npm run dev` / `npm run build` / `npm start`: electron-vite (src/main, src/preload, src/renderer).
+- `npm run rebuild:electron` (`electron-builder install-app-deps`): rebuild better-sqlite3 for Electron's ABI before running or packaging the app.
+- `npm run rebuild:node` (`npm rebuild better-sqlite3`): switch it back to Node's ABI before running `npx vitest run`.

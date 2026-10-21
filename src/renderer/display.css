@@ -1,0 +1,135 @@
+/*
+ * Large-screen display. Themed by the same tokens as the organizer window (src/shared/themes.ts),
+ * big and bold, animated, and with no interactive elements at all.
+ */
+:root { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; color-scheme: light dark; --ease: cubic-bezier(0.2, 0.8, 0.2, 1); }
+html, body { height: 100%; }
+body.display-body { margin: 0; background: var(--bg, Canvas); color: var(--text, CanvasText); overflow: hidden; cursor: default; user-select: none; -webkit-font-smoothing: antialiased; }
+#root { height: 100%; }
+.display { position: relative; height: 100vh; box-sizing: border-box; padding: 1.5vh 1.5vw; display: flex; flex-direction: column; gap: 1.5vh;
+  background: radial-gradient(90vw 60vh at 0% 0%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 60%), radial-gradient(70vw 60vh at 100% 100%, color-mix(in srgb, var(--team-b) 10%, transparent), transparent 60%), var(--bg); }
+.display-head { display: flex; align-items: center; gap: 1.4vw; padding: 1vh 1.4vw; border-radius: 1.6vh; background: var(--header-bg); color: var(--header-text); box-shadow: 0 0.8vh 2.4vh color-mix(in srgb, var(--shadow) 25%, transparent); }
+.display-head .logo { width: 6vh; height: 6vh; flex: none; }
+.display-title { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.display-head h1 { margin: 0; font-size: 4.4vh; line-height: 1.05; font-weight: 850; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.display-sub { font-size: 2.3vh; opacity: 0.85; }
+.display-stats { display: flex; gap: 1vw; }
+.dstat { font-size: 2.6vh; padding: 0.6vh 1.2vw; border-radius: 999px; background: color-mix(in srgb, var(--header-text) 12%, transparent); border: 1px solid color-mix(in srgb, var(--header-text) 22%, transparent); white-space: nowrap; }
+.dstat strong { font-size: 3vh; font-variant-numeric: tabular-nums; }
+.display-clock { font-size: 4vh; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.logo-tile { fill: var(--accent); }
+.logo-lines { stroke: var(--accent-contrast); stroke-opacity: 0.25; stroke-width: 2.5; fill: none; }
+.logo-handle { fill: var(--header-bg); }
+.logo-paddle { fill: var(--accent-contrast); stroke: var(--header-bg); stroke-width: 2; }
+.logo-ball { fill: #ffd54a; stroke: #b48a00; stroke-width: 1; }
+.logo-hole { fill: #b48a00; opacity: 0.55; }
+.logo-flow { fill: var(--accent-contrast); opacity: 0.7; }
+.logo-flow2 { fill: #ffd54a; opacity: 0.85; }
+
+.display-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 22vw; gap: 1.5vw; }
+.courts { display: grid; gap: 1.5vh 1.5vw; min-height: 0; }
+.court { position: relative; background: var(--surface); border: 0.35vh solid var(--border); border-radius: 2vh; padding: 1.2vh 1.2vw; display: flex; flex-direction: column; min-height: 0; min-width: 0; overflow: hidden; box-shadow: 0 1vh 3vh color-mix(in srgb, var(--shadow) 14%, transparent); animation: rise-in 0.5s var(--ease) both; transition: border-color 0.4s; }
+.court-in_use { border-color: color-mix(in srgb, var(--accent) 75%, var(--border)); }
+.court-in_use::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 0.8vh; background: linear-gradient(90deg, var(--team-a), var(--accent), var(--team-b)); }
+.court.over { border-color: var(--success); box-shadow: 0 0 0 0.6vh color-mix(in srgb, var(--success) 35%, transparent); }
+.court-unavailable { border-style: dashed; background: var(--surface-2); }
+.court-head { display: flex; justify-content: space-between; align-items: center; gap: 1vw; }
+.court-head h2 { margin: 0; font-size: 3.6vh; display: inline-flex; align-items: center; gap: 0.8vw; }
+.live-dot { width: 1.6vh; height: 1.6vh; border-radius: 50%; background: var(--danger); animation: live 1.8s ease-out infinite; }
+.court-note { font-size: 2.6vh; color: var(--muted); font-variant-numeric: tabular-nums; }
+.court-clock { color: var(--muted); }
+.court-free { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.6vh; }
+.court-free-text { margin: 0; font-size: 4vh; font-weight: 700; color: var(--muted); }
+.last-result { margin: 0; font-size: 2.8vh; padding: 0.8vh 1.4vw; border-radius: 999px; background: color-mix(in srgb, var(--success) 14%, var(--surface)); border: 0.25vh solid var(--success); color: var(--text); animation: pop-in 0.5s var(--ease) both; }
+.teams { flex: 1; display: grid; grid-template-columns: 1fr auto 1fr; gap: 0.8vw; min-height: 0; align-items: center; }
+.vs-divider { font-size: 2.4vh; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+.team { position: relative; text-align: center; padding: 1.4vh 0.6vw 0.8vh; border-radius: 1.6vh; min-width: 0; border: 0.3vh solid transparent; transition: background-color 0.4s, border-color 0.4s; }
+.team::before { content: ''; position: absolute; left: 18%; right: 18%; top: 0; height: 0.7vh; border-radius: 0 0 1vh 1vh; background: var(--border); }
+.team-a::before { background: var(--team-a); }
+.team-b::before { background: var(--team-b); }
+.team.serving { background: var(--serve-soft); border-color: var(--serve); animation: serve-ring 2.2s ease-out infinite; }
+.team.won { background: color-mix(in srgb, var(--success) 16%, var(--surface)); border-color: var(--success); }
+.team-names { display: flex; flex-direction: column; align-items: center; gap: 0.4vh; font-size: 3vh; line-height: 1.15; }
+.team-tag { font-size: 2.1vh; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; }
+.team-a .team-tag { color: var(--team-a); }
+.team-b .team-tag { color: var(--team-b); }
+.player { display: inline-flex; align-items: center; gap: 0.6vw; max-width: 100%; font-weight: 700; }
+.player-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.score { font-size: 17vh; line-height: 1; font-weight: 900; font-variant-numeric: tabular-nums; letter-spacing: -0.04em; color: var(--text); }
+.score-num { display: inline-block; animation: score-flip 0.55s var(--ease); }
+.serve-mark { min-height: 3.6vh; display: flex; justify-content: center; align-items: center; }
+.mark { display: inline-flex; align-items: center; gap: 0.6vw; font-size: 2.4vh; font-weight: 850; letter-spacing: 0.12em; padding: 0.3vh 1vw; border-radius: 999px; }
+.mark-serve { color: var(--text); border: 0.25vh solid var(--serve); background: var(--surface); }
+.mark-won { background: var(--success); color: var(--surface); }
+.mark-point { background: var(--danger); color: var(--danger-contrast); animation: point-glow 1.1s ease-in-out infinite alternate; }
+.serve-ball { width: 1.8vh; height: 1.8vh; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff3a6, #ffd54a 50%, #c9a312); animation: ball-bounce 0.8s ease-in-out infinite alternate; }
+
+.queue { background: var(--surface); border: 0.35vh solid var(--border); border-radius: 2vh; padding: 1.4vh 1vw; overflow: hidden; min-height: 0; box-shadow: 0 1vh 3vh color-mix(in srgb, var(--shadow) 14%, transparent); }
+.queue h2 { margin: 0 0 1vh; font-size: 3.6vh; display: flex; align-items: center; gap: 0.6vw; }
+.queue h2::before { content: ''; width: 1.4vh; height: 1.4vh; border-radius: 50%; background: var(--accent); animation: pulse-dot 1.8s ease-in-out infinite; }
+.queue ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.6vh; }
+.queue li { display: flex; gap: 0.7vw; align-items: center; font-size: 3vh; padding: 0.6vh 0.6vw; border-radius: 1.2vh; border: 1px solid var(--border); background: var(--surface); animation: rise-in 0.45s var(--ease) both; }
+.queue li.up-next { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 50%, transparent); font-weight: 700; }
+.queue-pos { min-width: 3.6vh; height: 3.6vh; display: inline-grid; place-items: center; border-radius: 50%; font-size: 2.2vh; font-weight: 800; font-variant-numeric: tabular-nums; background: var(--surface-2); color: var(--text); }
+.up-next .queue-pos { background: var(--accent); color: var(--accent-contrast); }
+.queue-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.queue-empty { font-size: 2.8vh; color: var(--muted); }
+.chip-avatar { --chip: 4vh; display: inline-grid; place-items: center; flex: none; width: var(--chip); height: var(--chip); border-radius: 50%; font-size: calc(var(--chip) * 0.42); font-weight: 850; box-shadow: 0 0 0 0.25vh var(--surface); }
+
+.display-idle { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3vh; font-size: 3vh; color: var(--muted); }
+.display-idle .idle-court { transform: scale(2.4); margin-bottom: 6vh; }
+
+/* Idle court art: a ball rallying over the net. */
+.idle-court { position: relative; flex: none; width: 24vh; height: 13vh; border-radius: 1.6vh; background: var(--court); overflow: hidden; box-shadow: inset 0 0 0 0.3vh color-mix(in srgb, var(--court-line) 60%, transparent); }
+.display-idle .idle-court { width: 12vh; height: 6.5vh; }
+.idle-court::before { content: ''; position: absolute; inset: 1.4vh; border: 0.3vh solid color-mix(in srgb, var(--court-line) 70%, transparent); border-radius: 0.4vh; }
+.idle-net { position: absolute; left: 50%; top: 0.8vh; bottom: 0.8vh; width: 0.5vh; transform: translateX(-50%); background: var(--court-line); }
+.idle-ball { position: absolute; left: 18%; bottom: 2.4vh; width: 2.2vh; height: 2.2vh; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff3a6, #ffd54a 50%, #c9a312); animation: rally-x 2.8s ease-in-out infinite alternate, rally-y 0.7s ease-in-out infinite alternate; }
+.idle-shadow { position: absolute; left: 18%; bottom: 1.6vh; width: 2.2vh; height: 0.7vh; border-radius: 50%; background: rgba(0, 0, 0, 0.35); animation: rally-x 2.8s ease-in-out infinite alternate; }
+.all-free .court-free .idle-court { animation: float 4s ease-in-out infinite; }
+
+@keyframes score-flip { 0% { transform: perspective(60vh) rotateX(-80deg) scale(1.15); opacity: 0; } 60% { transform: perspective(60vh) rotateX(10deg) scale(1.03); opacity: 1; } 100% { transform: none; } }
+@keyframes serve-ring { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--serve) 55%, transparent); } 70%, 100% { box-shadow: 0 0 0 2.4vh color-mix(in srgb, var(--serve) 0%, transparent); } }
+@keyframes ball-bounce { from { transform: translateY(0.2vh); } to { transform: translateY(-0.8vh); } }
+@keyframes point-glow { from { filter: brightness(1); transform: scale(1); } to { filter: brightness(1.15); transform: scale(1.07); } }
+@keyframes live { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--danger) 60%, transparent); } 80%, 100% { box-shadow: 0 0 0 1.4vh color-mix(in srgb, var(--danger) 0%, transparent); } }
+@keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+@keyframes rise-in { from { opacity: 0; transform: translateY(1.2vh); } to { opacity: 1; transform: none; } }
+@keyframes pop-in { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: none; } }
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-1vh); } }
+@keyframes rally-x { from { left: 14%; } to { left: 76%; } }
+@keyframes rally-y { from { bottom: 2.2vh; } to { bottom: 7.5vh; } }
+
+.still *, .still *::before, .still *::after { animation: none !important; transition: none !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  /* The ceremony stage keeps its timing and swaps movement for fades (ceremony.css). */
+  :not(.cer-stage, .cer-stage *), :not(.cer-stage *)::before, :not(.cer-stage *)::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; animation-delay: 0s !important; transition-duration: 0.001ms !important; }
+  .confetti { display: none; }
+}
+
+/* ---------- Awards ceremony on the large screen ---------- */
+.ceremony { position: relative; overflow: hidden; color: #ffffff; background: radial-gradient(120vh 50vh at 30% -10%, rgba(255, 213, 74, 0.2), transparent 60%), radial-gradient(90vh 40vh at 100% 110%, rgba(95, 211, 155, 0.16), transparent 60%), linear-gradient(160deg, color-mix(in srgb, var(--stage) 92%, #ffffff) 0%, var(--stage) 50%, color-mix(in srgb, var(--stage) 70%, #000000) 100%); }
+.ceremony-head { display: flex; align-items: baseline; gap: 2vw; }
+.ceremony-brand { margin-left: auto; align-self: center; display: flex; align-items: center; gap: 1vw; }
+.ceremony-brand .logo { width: 5vh; height: 5vh; }
+.brand-lockup { display: flex; flex-direction: column; line-height: 1.1; }
+.brand-lockup .brand-name { font-size: 3vh; font-weight: 850; letter-spacing: -0.01em; }
+.brand-lockup .brand-tagline { font-size: 1.6vh; opacity: 0.8; letter-spacing: 0.04em; }
+.ceremony-head h1 { margin: 0; font-size: 5.4vh; line-height: 1.1; letter-spacing: 0.01em; }
+.ceremony-empty { margin: auto; font-size: 4.5vh; color: #d6e6dc; text-align: center; }
+.ceremony-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: 1.05fr 1fr; gap: 2.5vw; align-items: stretch; }
+.ceremony-grid.solo { grid-template-columns: 1fr; }
+.ceremony-stage { display: flex; flex-direction: column; justify-content: flex-end; min-height: 0; padding: 0 0.5vw 0 1vw;
+  --champ-kicker: 2.8vh; --champ-name: 8vh; --champ-line: 2.8vh; --champ-gap: 3vh;
+  --avatar: 10vh; --avatar-1: 13vh; --podium-name: 3.6vh; --podium-record: 2.6vh; --podium-num: 9vh;
+  --step-1: 33vh; --step-2: 24vh; --step-3: 17vh; --podium-gap: 1.2vw; --note-size: 2.4vh; }
+.ceremony-stage .champion { margin-top: auto; }
+.ceremony-cards { display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: 1fr; gap: 1.6vh 1.2vw; min-height: 0; align-content: center;
+  --card-bg: rgba(255, 255, 255, 0.07); --card-border: rgba(255, 255, 255, 0.16); --card-title-color: #ffd54a; --card-winner-color: #ffffff; --card-explain-color: #cfe0d6; --stat-color: #ffffff;
+  --card-pad: 1.6vh 1.2vw 1.6vh 1.6vw; --card-gap: 0.9vw; --icon-box: 6.4vh; --card-title: 2vh; --card-winner: 3.6vh; --card-explain: 2.2vh; --stat-num: 5vh; --stat-label: 1.9vh; }
+.ceremony-cards.count-1, .ceremony-cards.count-2, .ceremony-cards.count-3, .ceremony-cards.count-4 { grid-template-columns: 1fr; --card-winner: 4.4vh; --icon-box: 8vh; --stat-num: 6vh; --card-title: 2.3vh; --card-explain: 2.5vh; }
+.ceremony-cards .award-card { box-shadow: 0 1vh 3vh rgba(0, 0, 0, 0.25); border-radius: 1.6vh; align-content: center; }
+.ceremony-cards .award-winner { margin-top: 0.8vh; }
+.ceremony .confetti .bit { width: 1.2vh; height: 2vh; }
+.ceremony .confetti .bit.round { width: 1.3vh; height: 1.3vh; }

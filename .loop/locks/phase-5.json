@@ -1,0 +1,11 @@
+{
+  "phase": 5,
+  "lockedAt": "2026-10-21T10:24:15.604Z",
+  "files": {
+    "tests/phase5/ac01.offline-static.test.ts": "22484113b6630a1e1dcc1d4d2a5f8f614e389e320f84b14b4f76a2ed215d1d80",
+    "tests/phase5/ac18.timer.test.ts": "27f780f0521bbfabacb263a39053a8872f0ec4cae1bfb9d9d9ee6e5677a27fc9",
+    "tests/phase5/ac19.display-model.test.ts": "670166f0f70ada45487d520ec43c5e52114ed4d81390fdb08a7e5c9edd323ec6",
+    "tests/phase5/ac20.release.test.ts": "689b414520de9cbe55cef4045d899427c7905b542740fd126803b9a6646c4057",
+    "tests/phase5/e2e/app.e2e.spec.ts": "b3c71e67dd9ad3d9c3a5e2711f9c67ffcc00564225f31c3dfd00e305af1a2fd7"
+  }
+}

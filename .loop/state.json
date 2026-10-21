@@ -1,6 +1,32 @@
 {
-  "phase": 1,
-  "status": "idle",
-  "attempts": 0,
-  "history": []
+  "phase": 5,
+  "status": "passed",
+  "attempts": 2,
+  "history": [
+    {
+      "phase": 1,
+      "passedAt": "2026-10-21T07:21:25.721Z",
+      "attempts": 4
+    },
+    {
+      "phase": 2,
+      "passedAt": "2026-10-21T08:56:53.579Z",
+      "attempts": 2
+    },
+    {
+      "phase": 3,
+      "passedAt": "2026-10-21T09:39:52.816Z",
+      "attempts": 2
+    },
+    {
+      "phase": 4,
+      "passedAt": "2026-10-21T10:09:20.920Z",
+      "attempts": 2
+    },
+    {
+      "phase": 5,
+      "passedAt": "2026-10-21T11:34:00.866Z",
+      "attempts": 2
+    }
+  ]
 }

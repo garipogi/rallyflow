@@ -1,0 +1,12 @@
+{
+  "phase": 2,
+  "lockedAt": "2026-10-21T08:12:42.390Z",
+  "files": {
+    "tests/phase2/ac05.side-out.test.ts": "e5cddd4b74144469f08b58f9e8f74e63b0def4b41f940d95f8dd569e12c01432",
+    "tests/phase2/ac06.win-condition.test.ts": "eff93ade4c53db76d414f5e0842541d9bc424f047142619cf8d5af475b0cf6f7",
+    "tests/phase2/ac07.undo.test.ts": "e4ed9d8d1a126603d0f3912403c77eb2aaba1d9d4b80f5aca28f261ab9deb2e3",
+    "tests/phase2/ac08.corrections.test.ts": "1a4235dfa7750a2a6ae59cf4ed95189a4d8d0a94b967901335657cc3c15b8fc2",
+    "tests/phase2/ac09.singles.test.ts": "96c1d260fb0c5778e68558de082a49a8e50fc1b36c309e3a9fb5f7260e56df62",
+    "tests/phase2/ac10.doubles.test.ts": "5c88e4dc891585ffe75056e85b6d0434e63b6c6aada3bad8bbefadd45cee2931"
+  }
+}

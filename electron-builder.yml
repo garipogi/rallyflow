@@ -1,0 +1,57 @@
+# RallyFlow — Offline Pickleball Open Play Manager.
+# Unsigned installers (docs/DECISIONS.md D13). No auto-update: the app never uses the network.
+# Optional signing/notarization is configured only through CI environment variables (see docs/RELEASING.md).
+appId: app.rallyflow.desktop
+productName: RallyFlow
+copyright: © 2026 RallyFlow
+directories:
+  output: release
+  buildResources: build
+files:
+  - out/**
+  - package.json
+# Shipped next to the app (Resources/ on macOS, resources\ on Windows); opened from Help > Third-Party Notices.
+extraResources:
+  - from: THIRD_PARTY_NOTICES.md
+    to: THIRD_PARTY_NOTICES.md
+  - from: EULA.md
+    to: EULA.md
+asarUnpack:
+  - "**/*.node"
+npmRebuild: false
+publish: null
+# Keep the packaged app's data folder identical to the dev app's and to earlier "Pickleball Open Play"
+# installs (~/Library/Application Support/pickleball-open-play, %APPDATA%\pickleball-open-play).
+# Electron names userData after package.json productName (falling back to name); this only rewrites the
+# packaged package.json, while the installed app, menus and installers still use the productName above.
+extraMetadata:
+  productName: pickleball-open-play
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: build/icon.ico
+  artifactName: ${productName}-Setup-${version}.${ext}
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  shortcutName: RallyFlow
+  uninstallDisplayName: RallyFlow
+mac:
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+    - target: zip
+      arch:
+        - x64
+        - arm64
+  category: public.app-category.sports
+  icon: build/icon.icns
+  identity: null
+  artifactName: ${productName}-${version}-${arch}.${ext}
+dmg:
+  title: ${productName} ${version}

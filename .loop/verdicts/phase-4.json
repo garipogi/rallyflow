@@ -1,0 +1,7 @@
+{
+  "phase": 4,
+  "verdict": "PASS",
+  "notes": "Phase 4: stats from finalized games only, recomputed per call; D9 leaderboard/unranked; RFC4180 CSV + D11 XLSX read-only; D10 backup manifest+sha256, validate->confirm->auto-backup->staged rename restore with DB reopened in finally; core pure.",
+  "treeHash": "94d8c7a1df464194f469ad003283878abe90b594b72941fc73da7221b0f0a2ed",
+  "at": "2026-10-21T10:08:59.529Z"
+}

@@ -1,0 +1,43 @@
+# Publishes the RallyFlow website (site/) to GitHub Pages on every push to main.
+# One-time setup: repository Settings › Pages › Build and deployment › Source: "GitHub Actions".
+# The download buttons are pointed at this repository automatically (site/config.js is filled in here).
+name: Website
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'site/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Point the download links at this repository
+        env:
+          OWNER: ${{ github.repository_owner }}
+          REPO: ${{ github.event.repository.name }}
+        run: |
+          sed -i "s|owner: '[^']*'|owner: '${OWNER}'|; s|repo: '[^']*'|repo: '${REPO}'|" site/config.js
+          cat site/config.js
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deployment
+        uses: actions/deploy-pages@v4

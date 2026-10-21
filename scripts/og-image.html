@@ -1,0 +1,40 @@
+<!doctype html>
+<!-- Source of site/assets/og-image.png (1200x630). Render: npx electron scripts/render-page.cjs scripts/og-image.html 1200 630 site/assets/og-image.png -->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<style>
+  html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: #f4f8f5;
+    background:
+      radial-gradient(700px 400px at 0% 0%, rgba(95, 224, 168, 0.28), transparent 70%),
+      radial-gradient(600px 380px at 100% 100%, rgba(255, 213, 74, 0.22), transparent 70%),
+      linear-gradient(150deg, #1d5e43 0%, #123d2c 55%, #0c1f17 100%);
+    position: relative;
+  }
+  .copy { position: absolute; left: 72px; top: 92px; width: 560px; }
+  .mark { display: flex; align-items: center; gap: 22px; }
+  .mark img { width: 120px; height: 120px; }
+  .word { font-size: 92px; font-weight: 850; letter-spacing: -3px; line-height: 1; }
+  .word span { color: #5fe0a8; }
+  .tag { margin-top: 34px; font-size: 38px; font-weight: 700; line-height: 1.2; }
+  .desc { margin-top: 16px; font-size: 26px; color: #b9cec2; }
+  .chips { margin-top: 34px; display: flex; gap: 12px; flex-wrap: wrap; }
+  .chip { font-size: 20px; font-weight: 650; padding: 8px 16px; border-radius: 999px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.22); }
+  .shot { position: absolute; right: -90px; top: 70px; width: 640px; border-radius: 18px; box-shadow: 0 30px 70px rgba(0,0,0,0.5); transform: rotate(-4deg); border: 6px solid rgba(255,255,255,0.12); }
+  .shot2 { position: absolute; right: 120px; top: 330px; width: 430px; border-radius: 14px; box-shadow: 0 24px 60px rgba(0,0,0,0.55); transform: rotate(3deg); border: 5px solid rgba(255,255,255,0.14); }
+</style>
+</head>
+<body>
+  <img class="shot" src="../site/assets/screenshots/display.png" alt="" />
+  <img class="shot2" src="../site/assets/screenshots/awards-ceremony.png" alt="" />
+  <div class="copy">
+    <div class="mark"><img src="../build/icon.svg" alt="" /><div class="word">Rally<span>Flow</span></div></div>
+    <div class="tag">Every game. Every player.<br />In rhythm.</div>
+    <div class="desc">Offline Pickleball Open Play Manager</div>
+    <div class="chips"><span class="chip">Fair rotation</span><span class="chip">Live scoring</span><span class="chip">Big-screen display</span></div>
+  </div>
+</body>
+</html>

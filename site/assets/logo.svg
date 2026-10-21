@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 300" width="1180" height="300" role="img" aria-labelledby="rf-title">
+  <title id="rf-title">RallyFlow — Every game. Every player. In rhythm.</title>
+  <style>
+    .rf-word { fill: #11241b; font: 800 132px/1 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; letter-spacing: -3px; }
+    .rf-flow { fill: #1d8a5c; }
+    .rf-tag { fill: #3d5a4b; font: 600 37px/1 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; letter-spacing: 1.5px; }
+    @media (prefers-color-scheme: dark) {
+      .rf-word { fill: #f4f8f5; }
+      .rf-flow { fill: #5fe0a8; }
+      .rf-tag { fill: #b9cec2; }
+    }
+  </style>
+  <svg x="0" y="0" width="300" height="300" viewBox="100 100 824 824">
+  
+  <defs>
+    <linearGradient id="rf-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2f8a63"/>
+      <stop offset="0.5" stop-color="#1d5e43"/>
+      <stop offset="1" stop-color="#11241b"/>
+    </linearGradient>
+    <radialGradient id="rf-glow" cx="0.68" cy="0.42" r="0.55">
+      <stop offset="0" stop-color="#ffe680" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#ffe680" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="rf-ball" cx="0.36" cy="0.32" r="0.75">
+      <stop offset="0" stop-color="#fff6b8"/>
+      <stop offset="0.45" stop-color="#ffd54a"/>
+      <stop offset="1" stop-color="#c99f0e"/>
+    </radialGradient>
+    <linearGradient id="rf-face" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f6f9f4"/>
+      <stop offset="1" stop-color="#cddbd0"/>
+    </linearGradient>
+    <linearGradient id="rf-flow" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#7fffd0" stop-opacity="0"/>
+      <stop offset="0.35" stop-color="#7fffd0" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.95"/>
+    </linearGradient>
+    <linearGradient id="rf-flow2" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffd54a" stop-opacity="0"/>
+      <stop offset="1" stop-color="#ffd54a" stop-opacity="0.9"/>
+    </linearGradient>
+    <clipPath id="rf-tile"><rect x="100" y="100" width="824" height="824" rx="185"/></clipPath>
+    <clipPath id="rf-ballclip"><circle cx="0" cy="0" r="142"/></clipPath>
+  </defs>
+  
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#rf-bg)"/>
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#rf-glow)"/>
+  
+  <g stroke="#ffffff" stroke-opacity="0.12" stroke-width="14" fill="none" clip-path="url(#rf-tile)">
+    <line x1="100" y1="800" x2="924" y2="800"/>
+    <line x1="512" y1="800" x2="512" y2="924"/>
+  </g>
+  
+  <g clip-path="url(#rf-tile)">
+    <path d="M236 500 C 270 250, 540 150, 676 330 L 630 372 C 530 236, 320 280, 236 500 Z" fill="url(#rf-flow)"/>
+    <path d="M300 548 C 340 370, 520 300, 622 420 L 600 446 C 510 350, 370 396, 300 548 Z" fill="url(#rf-flow2)"/>
+    <path d="M196 430 C 220 300, 330 210, 450 196 C 350 226, 262 300, 214 436 Z" fill="#ffffff" fill-opacity="0.28"/>
+  </g>
+  
+  <g transform="translate(330 660) rotate(-32) scale(0.74)">
+    <rect x="-38" y="150" width="76" height="230" rx="30" fill="#11241b"/>
+    <g stroke="#ffd54a" stroke-width="10" stroke-opacity="0.9">
+      <line x1="-38" y1="240" x2="38" y2="228"/>
+      <line x1="-38" y1="285" x2="38" y2="273"/>
+      <line x1="-38" y1="330" x2="38" y2="318"/>
+    </g>
+    <rect x="-185" y="-240" width="370" height="410" rx="120" fill="#11241b"/>
+    <rect x="-161" y="-216" width="322" height="362" rx="100" fill="url(#rf-face)"/>
+  </g>
+  
+  <g transform="translate(716 456)">
+    <circle cx="10" cy="18" r="142" fill="#000" fill-opacity="0.25"/>
+    <circle cx="0" cy="0" r="142" fill="url(#rf-ball)"/>
+    <g clip-path="url(#rf-ballclip)" fill="#6e5604" fill-opacity="0.88">
+      <circle cx="0" cy="0" r="22"/>
+      <circle cx="-66" cy="-43" r="20"/>
+      <circle cx="66" cy="-43" r="20"/>
+      <circle cx="-66" cy="47" r="20"/>
+      <circle cx="66" cy="47" r="20"/>
+      <circle cx="0" cy="-89" r="18"/>
+      <circle cx="0" cy="92" r="18"/>
+      <circle cx="-120" cy="0" r="15"/>
+      <circle cx="120" cy="2" r="15"/>
+    </g>
+    <ellipse cx="-53" cy="-74" rx="38" ry="22" fill="#fff" fill-opacity="0.38" transform="rotate(-30 -53 -74)"/>
+  </g>
+</svg>
+  <text x="330" y="168" class="rf-word">Rally<tspan class="rf-flow">Flow</tspan></text>
+  <text x="336" y="236" class="rf-tag">Every game. Every player. In rhythm.</text>
+</svg>
