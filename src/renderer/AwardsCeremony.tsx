@@ -1,5 +1,5 @@
 import { useEffect, useState, type CSSProperties } from 'react';
-import { formatWinners, type Award, type AwardId, type PodiumSpot } from '../core/awards';
+import { formatWinners, podiumCaption, podiumLayout, type Award, type AwardId, type PodiumStep } from '../core/awards';
 import type { AwardsReport } from '../data/awards';
 import type { ShowAward } from '../core/awards/lineup';
 import type { AwardCategory } from '../core/awards/templates';
@@ -48,18 +48,39 @@ export function initials(name: string): string {
 
 const style = (vars: Record<string, string | number>): CSSProperties => vars as CSSProperties;
 
-/** Gold in the middle, silver left, bronze right; tied players share a step. */
-export function Podium({ spots, still = false }: { spots: PodiumSpot[]; still?: boolean }) {
-  const order: Array<1 | 2 | 3> = [2, 1, 3];
+/** Names on a podium step: everyone when few, else the first three and "+N more". */
+export function podiumNames(players: ReadonlyArray<{ name: string }>, max = 3): string {
+  if (players.length <= max) return players.map((p) => p.name).join(' & ');
+  return `${players.slice(0, max).map((p) => p.name).join(', ')} +${players.length - max} more`;
+}
+
+/**
+ * Gold in the middle, silver left, bronze right. All three steps are always drawn; tied players share
+ * a step and the next players fill the next step (dense placement, see core/awards/podium.ts), with a
+ * small caption when the official rank differs ("Rank 3") or is shared ("Tied for 1st").
+ */
+export function Podium({ steps, still = false }: { steps: PodiumStep[]; still?: boolean }) {
   return (
     <ol className={`podium${still ? ' still' : ''}`} aria-label="Podium">
-      {order.map((place) => {
-        const spot = spots.find((s) => s.place === place);
-        if (!spot) return <li key={place} className={`podium-col place-${place} empty`} aria-hidden="true" />;
+      {podiumLayout(steps).map(({ step: place, spot }) => {
+        const delay = style({ '--i': place === 1 ? 2 : place === 2 ? 1 : 0 });
+        if (!spot) {
+          return (
+            <li key={place} className={`podium-col place-${place} vacant`} style={delay} aria-hidden="true">
+              <div className="podium-step">
+                <span className="podium-num">{place}</span>
+              </div>
+            </li>
+          );
+        }
         const lead = spot.players[0];
+        const caption = podiumCaption(spot);
         return (
-          <li key={place} className={`podium-col place-${place}`} style={style({ '--i': place === 1 ? 2 : place === 2 ? 1 : 0 })}>
-            <span className="sr-only">{PLACE_NAME[place]}: </span>
+          <li key={place} className={`podium-col place-${place}${spot.tied ? ' tied' : ''} n${Math.min(spot.players.length, 3)}`} style={delay}>
+            <span className="sr-only">
+              {PLACE_NAME[place]}
+              {caption ? ` (${caption})` : ''}:{' '}
+            </span>
             <div className="podium-people">
               <div className="podium-avatars" aria-hidden="true">
                 {spot.players.slice(0, 3).map((p) => (
@@ -71,12 +92,13 @@ export function Podium({ spots, still = false }: { spots: PodiumSpot[]; still?: 
               <div className="podium-medal" aria-hidden="true">
                 {MEDAL[place]}
               </div>
-              <div className="podium-names">{spot.players.map((p) => p.name).join(' & ')}</div>
+              <div className="podium-names">{podiumNames(spot.players)}</div>
               {lead ? (
                 <div className="podium-record">
                   {spot.record} · {Math.round(lead.winPct * 100)}%
                 </div>
               ) : null}
+              {caption ? <div className="podium-caption">{caption}</div> : null}
             </div>
             <div className="podium-step">
               <span className="podium-num" aria-hidden="true">
@@ -121,7 +143,7 @@ export function ChampionBanner({ report }: { report: AwardsReport }) {
   const champion = report.lineup.find((a) => a.templateId === 'champion');
   if (!champion) return null;
   return (
-    <div className="champion">
+    <div className={`champion${champion.groups.length > 1 ? ' shared' : ''}`}>
       <p className="champion-kicker">
         <span className="btn-icon" aria-hidden="true">🏆</span>
         {champion.title}

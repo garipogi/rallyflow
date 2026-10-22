@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { QueueEntry, Recommendation, RecommendationResult, RotationSettings } from '../core/rotation';
+import { isGroupingStyle, settingsForTeamUp, teamUpOf, type QueueEntry, type Recommendation, type RecommendationResult, type RotationSettings, type TeamUpStyle } from '../core/rotation';
+import { FUTURE_TEAM_UPS, TEAM_UP_CHOICES } from './teamUpOptions';
 import type { ApiResult } from '../shared/api';
 import type { Court, Game, Player, RosterEntry } from '../data/types';
 import { Avatar } from './ui/Avatar';
@@ -25,6 +26,8 @@ export function CourtOperations({ sessionId, courts, roster, games, readOnly, on
   const [overrideCourt, setOverrideCourt] = useState('');
   const [picked, setPicked] = useState<string[]>([]);
   const [reason, setReason] = useState('');
+  const [pairA, setPairA] = useState('');
+  const [pairB, setPairB] = useState('');
 
   const names = new Map<string, Player['displayName']>(roster.map((e) => [e.playerId, e.player.displayName]));
   const nameOf = (id: string): string => names.get(id) ?? id;
@@ -72,7 +75,18 @@ export function CourtOperations({ sessionId, courts, roster, games, readOnly, on
     if (await unwrap(window.openPlay.setRotationSettings(sessionId, patch))) await load();
   };
 
-  const balanced = settings?.fairness === 'balanced_games';
+  const style: TeamUpStyle = settings ? teamUpOf(settings) : 'balanced';
+  const grouping = isGroupingStyle(style);
+  const balanced = settings?.fairness === 'balanced_games' || grouping;
+  const fixedPairs = settings?.fixedPairs ?? [];
+  const paired = new Set(fixedPairs.flat());
+  const lockPair = async () => {
+    if (await unwrap(window.openPlay.setRotationSettings(sessionId, { fixedPairs: [...fixedPairs, [pairA, pairB]] }))) {
+      setPairA('');
+      setPairB('');
+      await load();
+    }
+  };
   const format = settings?.format ?? 'doubles';
   const needed = format === 'doubles' ? 4 : 2;
   const override = async () => {
@@ -199,27 +213,60 @@ export function CourtOperations({ sessionId, courts, roster, games, readOnly, on
       {settings ? (
         <div>
           <label>
-            Who plays next{' '}
-            <select
-              value={balanced ? 'balanced_games' : 'wait_time'}
-              disabled={readOnly}
-              onChange={(e) =>
-                void toggleSetting(
-                  e.target.value === 'balanced_games'
-                    ? { fairness: 'balanced_games', partnerRotation: true }
-                    : { fairness: 'wait_time' },
-                )
-              }
-            >
-              <option value="balanced_games">Balance games played (recommended)</option>
-              <option value="wait_time">Longest wait first</option>
+            Team-up style{' '}
+            <select value={style} disabled={readOnly} onChange={(e) => void toggleSetting(settingsForTeamUp(e.target.value as TeamUpStyle))}>
+              {TEAM_UP_CHOICES.map((c) => (
+                <option key={c.value} value={c.value}>
+                  {c.label}
+                </option>
+              ))}
             </select>
           </label>
           <p className="hint">
-            {balanced
-              ? 'Players with the fewest games go first, then the longest wait; late arrivals start level with the regulars and partners rotate.'
-              : 'Longest wait goes first; ties go to whoever checked in earlier, which can give early arrivals extra games.'}
+            {TEAM_UP_CHOICES.find((c) => c.value === style)?.hint}
+            {grouping ? ' Who plays is always decided by the balanced-games rule (fewest games first), so everyone gets the same number of games.' : ''}
           </p>
+          {style === 'fixed_partners' ? (
+            <div className="fixed-pairs">
+              <strong>Locked pairs</strong>
+              {fixedPairs.length === 0 ? <p className="hint">No pairs locked yet. Players without a pair are teamed by the balanced rule.</p> : null}
+              <ul>
+                {fixedPairs.map((pair) => (
+                  <li key={pair.join('+')}>
+                    {pair.map(nameOf).join(' + ')}{' '}
+                    <button
+                      className="secondary"
+                      disabled={readOnly}
+                      onClick={() => void toggleSetting({ fixedPairs: fixedPairs.filter((p) => p !== pair) })}
+                    >
+                      Unlock {pair.map(nameOf).join(' + ')}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <div className="row">
+                {[
+                  { value: pairA, set: setPairA, other: pairB, label: 'First partner' },
+                  { value: pairB, set: setPairB, other: pairA, label: 'Second partner' },
+                ].map((f) => (
+                  <select key={f.label} aria-label={f.label} value={f.value} disabled={readOnly} onChange={(e) => f.set(e.target.value)}>
+                    <option value="">{f.label}…</option>
+                    {roster
+                      .filter((e) => !paired.has(e.playerId) && e.playerId !== f.other)
+                      .map((e) => (
+                        <option key={e.playerId} value={e.playerId}>
+                          {e.player.displayName}
+                        </option>
+                      ))}
+                  </select>
+                ))}
+                <button disabled={readOnly || pairA === '' || pairB === '' || pairA === pairB} onClick={() => void lockPair()}>
+                  Lock pair
+                </button>
+              </div>
+            </div>
+          ) : null}
+          <p className="hint">Coming later (not selectable yet): {FUTURE_TEAM_UPS.join(' · ')}.</p>
         </div>
       ) : null}
       {settings ? (
@@ -258,11 +305,12 @@ export function CourtOperations({ sessionId, courts, roster, games, readOnly, on
           <label>
             <input
               type="checkbox"
-              checked={settings.skillBalancing}
-              disabled={readOnly}
+              checked={settings.skillBalancing && !grouping}
+              disabled={readOnly || grouping}
+              title={grouping ? 'The team-up style decides the teams' : undefined}
               onChange={(e) => void toggleSetting({ skillBalancing: e.target.checked })}
             />{' '}
-            Balance by skill
+            Balance by skill{grouping ? ' (off: the team-up style decides the teams)' : ''}
           </label>
           <label>
             <input
@@ -272,7 +320,7 @@ export function CourtOperations({ sessionId, courts, roster, games, readOnly, on
               title={balanced ? 'Always on while balancing games played' : undefined}
               onChange={(e) => void toggleSetting({ partnerRotation: e.target.checked })}
             />{' '}
-            Rotate partners{balanced ? ' (always on when balancing games)' : ''}
+            Rotate partners{grouping ? ' (the team-up style splits partners)' : balanced ? ' (always on when balancing games)' : ''}
           </label>
         </div>
       ) : null}

@@ -31,13 +31,18 @@ function Ceremony({ report }: { report: AwardsReport }) {
     <main className={`display ceremony${STILL ? ' still' : ''}`} data-ready="awards">
       {burst > 0 ? <Confetti burst={burst} pieces={140} /> : null}
       <header className="ceremony-head">
-        <h1>
-          <span className="btn-icon" aria-hidden="true">🏆</span>Awards
-        </h1>
-        <span className="display-sub">
-          {report.scopeLabel}
-          {report.finalizedGames > 0 ? ` · ${report.finalizedGames} finalized ${report.finalizedGames === 1 ? 'game' : 'games'}` : ''}
-        </span>
+        <div className="ceremony-title">
+          <h1>
+            <span className="btn-icon" aria-hidden="true">🏆</span>
+            {report.club?.name ? report.club.name : 'Awards'}
+          </h1>
+          <span className="display-sub">
+            {report.club?.name ? 'Awards · ' : ''}
+            {report.scopeLabel}
+            {report.finalizedGames > 0 ? ` · ${report.finalizedGames} finalized ${report.finalizedGames === 1 ? 'game' : 'games'}` : ''}
+            {report.club?.tagline ? <span className="ceremony-tagline"> · {report.club.tagline}</span> : null}
+          </span>
+        </div>
         <span className="ceremony-brand">
           <Logo size={44} />
           <BrandLockup />
@@ -49,7 +54,7 @@ function Ceremony({ report }: { report: AwardsReport }) {
         <div className={`ceremony-grid${others.length === 0 ? ' solo' : ''}`}>
           <section className="ceremony-stage">
             <ChampionBanner report={report} />
-            <Podium spots={report.podium} still={STILL} />
+            <Podium steps={report.podiumSteps} still={STILL} />
             {report.note ? <p className="stage-note">{report.note}</p> : null}
           </section>
           {others.length > 0 ? (

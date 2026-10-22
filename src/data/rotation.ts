@@ -5,9 +5,14 @@ import {
   DEFAULT_ROTATION_SETTINGS,
   FAIRNESS_MODES,
   fairnessOf,
+  isGroupingStyle,
   orderQueue,
   recommend,
   RotationError,
+  TEAM_UP_STYLES,
+  teamUpOf,
+  teamUpQueue,
+  type CourtInput,
   type DeclinePolicy,
   type GameFormat,
   type PastGame,
@@ -85,11 +90,32 @@ function validateSettings(settings: RotationSettings): void {
   if (settings.fairness !== undefined && !FAIRNESS_MODES.includes(settings.fairness)) {
     throw new ValidationError(`Unknown fairness mode: ${String(settings.fairness)}`);
   }
+  if (settings.teamUp !== undefined && !TEAM_UP_STYLES.includes(settings.teamUp)) {
+    throw new ValidationError(`Unknown team-up style: ${String(settings.teamUp)}`);
+  }
+  if (settings.fixedPairs !== undefined) validateFixedPairs(settings.fixedPairs);
   try {
     assertValidDeclinePolicy(settings.declinePolicy);
   } catch (err) {
     if (err instanceof RotationError) throw new ValidationError(err.message);
     throw err;
+  }
+}
+
+/** D16 fixed partners: each pair is two different player ids and nobody is in two pairs. */
+function validateFixedPairs(pairs: unknown): void {
+  if (!Array.isArray(pairs)) throw new ValidationError('Fixed partners must be a list of pairs.');
+  const seen = new Set<string>();
+  for (const pair of pairs as unknown[]) {
+    if (!Array.isArray(pair) || pair.length !== 2 || !pair.every((id) => typeof id === 'string' && id !== '')) {
+      throw new ValidationError('Each fixed pair needs exactly two players.');
+    }
+    const [a, b] = pair as [string, string];
+    if (a === b) throw new ValidationError('A player cannot be their own fixed partner.');
+    for (const id of [a, b]) {
+      if (seen.has(id)) throw new ValidationError('A player can be in only one fixed pair.');
+      seen.add(id);
+    }
   }
 }
 
@@ -224,14 +250,36 @@ function loadPlayers(db: Db, sessionId: string): QueuePlayer[] {
   });
 }
 
+/** D16: every grouping style decides who plays by balanced games, so its declines use that queue too. */
 function orderingOf(settings: RotationSettings, sessionId: string): QueueOrdering {
-  return { fairness: fairnessOf(settings), seed: sessionId };
+  return { fairness: isGroupingStyle(teamUpOf(settings)) ? 'balanced_games' : fairnessOf(settings), seed: sessionId };
 }
 
-/** The waiting queue in order (D2, or D14 when the session balances games), with waits measured at `opts.at` (default: now). */
+function courtInputs(db: Db, sessionId: string): CourtInput[] {
+  const busyCourts = new Set(listActiveGames(db, sessionId).map((g) => g.courtId));
+  return listCourts(db, sessionId).map((c) => ({
+    courtId: c.id,
+    label: c.label,
+    status: c.status,
+    occupied: busyCourts.has(c.id),
+  }));
+}
+
+/**
+ * The waiting queue in order (D2, D14 when the session balances games, or the D16 team-up style's
+ * order), with waits measured at `opts.at` (default: now).
+ */
 export function getQueue(db: Db, sessionId: string, opts: { at?: string } = {}): QueueEntry[] {
   const settings = getRotationSettings(db, sessionId);
-  return orderQueue(loadPlayers(db, sessionId), opts.at ?? nowIso(), orderingOf(settings, sessionId));
+  const now = opts.at ?? nowIso();
+  const style = teamUpOf(settings);
+  if (isGroupingStyle(style)) {
+    return teamUpQueue(
+      { now, players: loadPlayers(db, sessionId), courts: courtInputs(db, sessionId), settings, pastGames: pastGamesOf(db, sessionId), seed: sessionId },
+      style,
+    );
+  }
+  return orderQueue(loadPlayers(db, sessionId), now, orderingOf(settings, sessionId));
 }
 
 // ----------------------------------------------------------- recommendations
@@ -242,6 +290,11 @@ function pastGamesOf(db: Db, sessionId: string): PastGame[] {
     .map((g) => ({
       teamA: g.participants.filter((p) => p.team === 'A').map((p) => p.playerId),
       teamB: g.participants.filter((p) => p.team === 'B').map((p) => p.playerId),
+      // D16: results, courts and times for paddle stacking, the river and the sit-out wheel
+      winner: g.status === 'completed' ? g.winner : null,
+      courtId: g.courtId,
+      startedAt: g.startedAt,
+      endedAt: g.status === 'completed' || g.status === 'incomplete' ? g.endedAt : null,
     }));
 }
 
@@ -254,16 +307,10 @@ export function recommendNextGames(
   const settings = getRotationSettings(db, sessionId);
   if (opts.format !== undefined) settings.format = opts.format;
   validateSettings(settings);
-  const busyCourts = new Set(listActiveGames(db, sessionId).map((g) => g.courtId));
   return recommend({
     now: opts.at ?? nowIso(),
     players: loadPlayers(db, sessionId),
-    courts: listCourts(db, sessionId).map((c) => ({
-      courtId: c.id,
-      label: c.label,
-      status: c.status,
-      occupied: busyCourts.has(c.id),
-    })),
+    courts: courtInputs(db, sessionId),
     settings,
     pastGames: pastGamesOf(db, sessionId),
     seed: sessionId,
@@ -305,6 +352,7 @@ export function assignRecommendation(
         teamA: [...rec.teamA],
         teamB: [...rec.teamB],
         explanation: rec.explanation,
+        ...(rec.teamUp !== undefined ? { teamUp: rec.teamUp } : {}),
       },
       at,
     );

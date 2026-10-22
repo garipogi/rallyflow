@@ -1,5 +1,5 @@
 import { ScoringError } from '../core/scoring';
-import { NEW_SESSION_ROTATION_SETTINGS } from '../core/rotation';
+import { NEW_SESSION_ROTATION_SETTINGS, settingsForTeamUp, TEAM_UP_STYLES, type TeamUpStyle } from '../core/rotation';
 import { withTransaction } from '../data/db';
 import type { Db } from '../data/db';
 import {
@@ -64,6 +64,7 @@ import {
 } from '../data/awards';
 import { buildSteps, phasesOf, validateCeremonyState } from '../shared/ceremony';
 import { getAppearance, setAppearance } from '../data/appearance';
+import { getClub, setClub, setSessionClubName } from '../data/club';
 import type { Appearance } from '../shared/themes';
 import { FILE_PREFIX } from '../shared/brand';
 import { writeFileSync } from 'node:fs';
@@ -177,15 +178,28 @@ function createDbHandlers(db: Db): { [K in SyncHandlerName]: (...args: unknown[]
     createSession: (input) =>
       run(() =>
         withTransaction(db, () => {
-          const session = createSession(db, input as Parameters<OrganizerApi['createSession']>[0]);
-          setRotationSettings(db, session.id, { ...NEW_SESSION_ROTATION_SETTINGS }, { at: session.startedAt });
+          const typed = input as Parameters<OrganizerApi['createSession']>[0];
+          const session = createSession(db, typed);
+          // D16: an optional team-up style chosen on the new-session form
+          const style = typed.teamUp;
+          if (style !== undefined && !TEAM_UP_STYLES.includes(style as TeamUpStyle)) {
+            throw new ValidationError(`Unknown team-up style: ${String(style)}`);
+          }
+          const patch = style === undefined ? { ...NEW_SESSION_ROTATION_SETTINGS } : { ...NEW_SESSION_ROTATION_SETTINGS, ...settingsForTeamUp(style) };
+          setRotationSettings(db, session.id, patch, { at: session.startedAt });
           return session;
         }),
       ),
     loadSessionState: (id) => run(() => loadSessionState(db, id as string)),
     finishSession: (id) => run(() => finishSession(db, id as string)),
     reopenSession: (id) => run(() => reopenSession(db, id as string)),
-    setCourtCount: (id, count) => run(() => setCourtCount(db, id as string, count as number)),
+    // D15: 1 court only with the explicit opt-in the court selector sends
+    setCourtCount: (id, count, opts) =>
+      run(() =>
+        setCourtCount(db, id as string, count as number, {
+          allowSingleCourt: (opts as { allowSingleCourt?: unknown } | undefined)?.allowSingleCourt === true,
+        }),
+      ),
     setCourtStatus: (id, status) => run(() => setCourtStatus(db, id as string, status as 'available' | 'unavailable')),
     listPlayers: () => run(() => listPlayers(db)),
     addExistingPlayer: (sid, pid) => run(() => addPlayerToSession(db, sid as string, pid as string)),
@@ -234,6 +248,9 @@ function createDbHandlers(db: Db): { [K in SyncHandlerName]: (...args: unknown[]
     addAwardToLineup: (templateId) => run(() => addAwardToLineup(db, templateId)),
     getAwardLibrary: (scope) => run(() => getAwardLibrary(db, toScope(scope))),
     setAwardPick: (scope, key, pick) => run(() => setAwardPick(db, toScope(scope), key, pick)),
+    getClub: (sessionId) => run(() => getClub(db, sessionId)),
+    setClub: (club) => run(() => setClub(db, club)),
+    setSessionClubName: (sessionId, name) => run(() => setSessionClubName(db, sessionId, name)),
   };
 }
 

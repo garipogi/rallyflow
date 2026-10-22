@@ -24,6 +24,8 @@ interface Keyed {
   checkedInMs: number;
   effectiveGames: number;
   draw: number;
+  first: number;
+  tie: number;
 }
 
 const byId = (a: Keyed, b: Keyed): number =>
@@ -43,8 +45,10 @@ function compareKeyed(a: Keyed, b: Keyed): number {
  * arrival win every tie among players who finished the same game.
  */
 function compareBalanced(a: Keyed, b: Keyed): number {
+  if (a.first !== b.first) return a.first - b.first;
   if (a.effectiveGames !== b.effectiveGames) return a.effectiveGames - b.effectiveGames;
   if (a.eligibleMs !== b.eligibleMs) return a.eligibleMs - b.eligibleMs;
+  if (a.tie !== b.tie) return a.tie - b.tie;
   if (a.draw !== b.draw) return a.draw - b.draw;
   return byId(a, b);
 }
@@ -78,6 +82,8 @@ export function orderQueue(players: readonly QueuePlayer[], now: string, orderin
         checkedInMs: parseInstant(player.checkedInAt, `checkedInAt of ${player.playerId}`),
         effectiveGames,
         draw: balanced ? tieDraw(seed, player.playerId, effectiveGames) : 0,
+        first: balanced ? (ordering.firstKey?.get(player.playerId) ?? 0) : 0,
+        tie: balanced ? (ordering.tieKey?.get(player.playerId) ?? 0) : 0,
       };
     });
   const waitingIds = new Set(waiting.map((k) => k.player.playerId));

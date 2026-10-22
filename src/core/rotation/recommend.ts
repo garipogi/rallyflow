@@ -1,11 +1,14 @@
+import { opponentCounts, pairKey, partnershipCounts } from './history';
 import { assertUniqueIds, orderQueue, parseInstant } from './queue';
+import { recommendTeamUps } from './teamups';
 import {
   fairnessOf,
+  isGroupingStyle,
+  teamUpOf,
   playersNeeded,
   type CourtInput,
   type ExcludedPlayer,
   type OpenCourt,
-  type PastGame,
   type PlayerReason,
   type QueueEntry,
   type QueuePlayer,
@@ -14,41 +17,8 @@ import {
   type RotationInput,
   type RotationSettings,
   type SkippedCourt,
+  type TeamUpStyle,
 } from './types';
-
-/** How many times each pair of players has been partners (same team) in past games. */
-function partnershipCounts(pastGames: readonly PastGame[]): Map<string, number> {
-  const counts = new Map<string, number>();
-  for (const game of pastGames) {
-    for (const team of [game.teamA, game.teamB]) {
-      for (let i = 0; i < team.length; i++) {
-        for (let j = i + 1; j < team.length; j++) {
-          const key = pairKey(team[i] as string, team[j] as string);
-          counts.set(key, (counts.get(key) ?? 0) + 1);
-        }
-      }
-    }
-  }
-  return counts;
-}
-
-/** How many times each pair of players has faced each other (opposite teams) in past games. */
-function opponentCounts(pastGames: readonly PastGame[]): Map<string, number> {
-  const counts = new Map<string, number>();
-  for (const game of pastGames) {
-    for (const a of game.teamA) {
-      for (const b of game.teamB) {
-        const key = pairKey(a, b);
-        counts.set(key, (counts.get(key) ?? 0) + 1);
-      }
-    }
-  }
-  return counts;
-}
-
-function pairKey(a: string, b: string): string {
-  return a < b ? `${a}\u0000${b}` : `${b}\u0000${a}`;
-}
 
 /**
  * Index of the first player's partner within the group (queue order), in order of preference when nothing else decides: the first
@@ -159,6 +129,18 @@ function describeSplit(names: (id: string) => string, teamA: readonly string[], 
  * a balance; with both toggles off the split pairs the first and last of the group in queue order.
  */
 export function recommend(input: RotationInput): RecommendationResult {
+  // D16: the grouping styles have their own engine; 'balanced' and 'longest_wait' pin the fairness
+  // mode they stand for. Without a teamUp setting nothing changes (D1-D7, D14).
+  const style = teamUpOf(input.settings);
+  if (isGroupingStyle(style)) return recommendTeamUps(input, style);
+  if (input.settings.teamUp !== undefined) {
+    const fairness = style === 'balanced' ? 'balanced_games' : 'wait_time';
+    return recommendOriginal({ ...input, settings: { ...input.settings, fairness } }, style);
+  }
+  return recommendOriginal(input);
+}
+
+function recommendOriginal(input: RotationInput, style?: TeamUpStyle): RecommendationResult {
   const { now, players, courts, settings } = input;
   parseInstant(now, 'now');
   assertUniqueIds(
@@ -290,6 +272,7 @@ export function recommend(input: RotationInput): RecommendationResult {
       explanation: balanced
         ? explainBalanced(court, settings, reasons, bypassed, split, chosen, remaining)
         : explain(court, settings, reasons, bypassed, split, chosen),
+      ...(style !== undefined ? { teamUp: style } : {}),
     });
     remaining = remaining.filter((e) => !chosenIds.has(e.playerId));
   }

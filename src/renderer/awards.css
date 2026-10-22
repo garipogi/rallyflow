@@ -6,7 +6,9 @@
 /* ---------- Podium ---------- */
 .podium { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1.15fr 1fr; align-items: end; gap: var(--podium-gap, 14px); }
 .podium-col { display: flex; flex-direction: column; align-items: center; min-width: 0; animation: rise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both; animation-delay: calc(var(--i, 0) * 0.18s + 0.1s); }
-.podium-col.empty { visibility: hidden; }
+.podium-col.vacant .podium-step { opacity: 0.35; filter: saturate(0.4); }
+.podium-caption { margin-top: 2px; font-size: calc(var(--podium-record, 15px) * 0.85); font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #ffe48a; padding: 1px 10px; border-radius: 999px; border: 1px solid rgba(255, 213, 74, 0.6); background: rgba(255, 213, 74, 0.12); }
+.podium-col.n2 .podium-names, .podium-col.n3 .podium-names { font-size: calc(var(--podium-name, 20px) * 0.82); }
 .podium-people { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; padding: 0 6px 10px; min-width: 0; max-width: 100%; }
 .podium-avatars { display: flex; justify-content: center; }
 .avatar { display: inline-grid; place-items: center; width: var(--avatar, 64px); height: var(--avatar, 64px); border-radius: 50%; font-weight: 800; font-size: calc(var(--avatar, 64px) * 0.36); letter-spacing: 0.02em; color: #14231b; background: var(--medal-face); border: 3px solid rgba(255, 255, 255, 0.85); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35); }
@@ -29,6 +31,7 @@
 .champion { text-align: center; color: #fff; margin-bottom: var(--champ-gap, 18px); animation: rise 0.7s ease-out both; }
 .champion-kicker { margin: 0; font-size: var(--champ-kicker, 15px); font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #ffd54a; display: inline-flex; align-items: center; gap: 8px; }
 .champion-name { margin: 2px 0; font-size: var(--champ-name, 38px); line-height: 1.1; font-weight: 900; background: linear-gradient(180deg, #ffffff 30%, #ffe48a); -webkit-background-clip: text; background-clip: text; color: transparent; overflow-wrap: anywhere; }
+.champion.shared .champion-name { font-size: calc(var(--champ-name, 38px) * 0.62); }
 .champion-line { margin: 0; font-size: var(--champ-line, 16px); color: #d6e6dc; }
 .pill { font-size: 0.75em; letter-spacing: 0.06em; padding: 2px 10px; border-radius: 999px; background: rgba(255, 213, 74, 0.18); border: 1px solid #ffd54a; color: #ffe48a; }
 .stage-note { margin: 14px auto 0; max-width: 60ch; text-align: center; color: #e8f1ec; font-size: var(--note-size, 15px); background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 10px; padding: 8px 14px; }

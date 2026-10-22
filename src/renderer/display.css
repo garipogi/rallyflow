@@ -116,14 +116,16 @@ body.display-body { margin: 0; background: var(--bg, Canvas); color: var(--text,
 .brand-lockup { display: flex; flex-direction: column; line-height: 1.1; }
 .brand-lockup .brand-name { font-size: 3vh; font-weight: 850; letter-spacing: -0.01em; }
 .brand-lockup .brand-tagline { font-size: 1.6vh; opacity: 0.8; letter-spacing: 0.04em; }
-.ceremony-head h1 { margin: 0; font-size: 5.4vh; line-height: 1.1; letter-spacing: 0.01em; }
+.ceremony-head h1 { margin: 0; font-size: 5.4vh; line-height: 1.1; letter-spacing: 0.01em; overflow-wrap: anywhere; }
+.ceremony-title { display: flex; flex-direction: column; gap: 0.4vh; min-width: 0; }
+.ceremony-tagline { font-style: italic; color: #ffe9a8; }
 .ceremony-empty { margin: auto; font-size: 4.5vh; color: #d6e6dc; text-align: center; }
 .ceremony-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: 1.05fr 1fr; gap: 2.5vw; align-items: stretch; }
 .ceremony-grid.solo { grid-template-columns: 1fr; }
 .ceremony-stage { display: flex; flex-direction: column; justify-content: flex-end; min-height: 0; padding: 0 0.5vw 0 1vw;
   --champ-kicker: 2.8vh; --champ-name: 8vh; --champ-line: 2.8vh; --champ-gap: 3vh;
   --avatar: 10vh; --avatar-1: 13vh; --podium-name: 3.6vh; --podium-record: 2.6vh; --podium-num: 9vh;
-  --step-1: 33vh; --step-2: 24vh; --step-3: 17vh; --podium-gap: 1.2vw; --note-size: 2.4vh; }
+  --step-1: 28vh; --step-2: 20vh; --step-3: 14vh; --podium-gap: 1.2vw; --note-size: 2.4vh; }
 .ceremony-stage .champion { margin-top: auto; }
 .ceremony-cards { display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: 1fr; gap: 1.6vh 1.2vw; min-height: 0; align-content: center;
   --card-bg: rgba(255, 255, 255, 0.07); --card-border: rgba(255, 255, 255, 0.16); --card-title-color: #ffd54a; --card-winner-color: #ffffff; --card-explain-color: #cfe0d6; --stat-color: #ffffff;

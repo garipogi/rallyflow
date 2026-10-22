@@ -2,6 +2,17 @@
 
 All notable changes to RallyFlow are listed here. Versions follow [Semantic Versioning](https://semver.org).
 
+## 1.2.0 (unreleased)
+
+### Courts and team-ups
+- **1 court (small group):** sessions can now run on a single court. Choose "1 court (small group)" when starting a session or under Number of courts. Rotation, recommendations, the display (one big court card), stats and awards all work with one court. The 2-4 court rule still applies unless the app explicitly opts in to one court (D15).
+- **Team-up style** (on the new-session form and in Game settings): **Balanced (recommended)**, **Longest wait**, **Random** (a sit-out wheel: nobody plays twice before everyone has played once; random teammates and opponents), **Paddle stacking** (winners play winners, losers play losers), **Up & Down the River** (king of the court: winners move up, losers move down) and **Fixed partners** (lock pairs who always play together). Who plays is still decided by the balanced-games rule in every grouping style, so game counts stay level; each recommendation explains the grouping (D16).
+- Coming later: mixed doubles, skill pools, round robin schedule, mentor pairing, challenge court and Swiss pairing (listed in the guide and in Game settings, not selectable yet).
+
+### Awards
+- **✏️ Club name:** set your club or group name (and an optional tagline) on the Awards page or under Appearance, with an optional name for one session only. It leads the ceremony welcome card, every title card header, the finale and wrap-up, the awards board on the display, the saved image, the Awards page banner and the certificates ("Presented by …"). Empty falls back to the session name and RallyFlow.
+- Fixed: the podium could show only 1st and 3rd. After a tie for first (official ranks 1, 1, 3) the silver step was left empty and hidden. The podium now always draws gold, silver and bronze: tied players share a step ("Tied for 1st") and the next players fill the next steps, with a small "Rank N" label when the official rank differs. Same on the ceremony finale, the awards board, the saved image and the Awards page.
+
 ## 1.1.1
 
 - Fixed: on Apple-silicon Macs a downloaded copy could be refused as "damaged". Mac builds are now ad-hoc signed (free, no Apple account), so macOS shows the normal first-open prompt.

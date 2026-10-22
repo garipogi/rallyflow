@@ -361,3 +361,7 @@ button.celebrate:focus-visible { outline-color: #ffd54a; }
   .cert-explain { margin: 0; font-size: 16pt; color: #14231b; }
   .cert-foot { margin: 6mm 0 0; font-size: 12pt; color: #3d4f45; font-family: system-ui, sans-serif; }
 }
+
+/* D16 fixed partners: locked pairs list in Game settings */
+.fixed-pairs { margin: 8px 0; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-2); }
+.fixed-pairs ul { list-style: none; margin: 6px 0; padding: 0; display: grid; gap: 6px; }

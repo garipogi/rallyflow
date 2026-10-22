@@ -9,6 +9,8 @@ import { AwardLibrary } from './AwardLibrary';
 import { CeremonyHost } from './CeremonyHost';
 import { CeremonySound } from './ceremonyAudio';
 import { BRAND } from '../shared/brand';
+import { presentedBy } from '../shared/club';
+import { ClubNameEditor } from './ClubNameEditor';
 
 type ScopeKind = 'session' | 'historical';
 
@@ -35,6 +37,7 @@ function Certificates({ report }: { report: AwardsReport }) {
             <p className="cert-presented">is proudly presented to</p>
             <p className="cert-name">{name}</p>
             <p className="cert-explain">{award.explanation}</p>
+            {presentedBy(report.club) ? <p className="cert-club">{presentedBy(report.club)}</p> : null}
             <p className="cert-foot">
               {report.scopeLabel}
               {report.sessionId && report.date ? ` · ${longDate(report.date)}` : ''} · {BRAND.name} — {BRAND.tagline}
@@ -218,6 +221,13 @@ export function Awards({
         </h2>
       </div>
 
+      <ClubNameEditor
+        key={scope?.kind === 'session' ? scope.sessionId : 'all-time'}
+        sessionId={scope?.kind === 'session' ? scope.sessionId : null}
+        sessionLabel={scope?.kind === 'session' ? (sessions.find((s) => s.id === scope.sessionId)?.name ?? '') : ''}
+        onSaved={() => void reload()}
+      />
+
       <div className="awards-controls">
         <div className="scope-picker" role="group" aria-label="Show awards for">
           <span className="scope-label">Show awards for</span>
@@ -329,15 +339,23 @@ export function Awards({
           <div className="awards-stage" data-testid="awards-stage">
             <Confetti burst={burst} />
             <div className="stage-head">
-              <p className="stage-scope">
-                {report.scopeLabel} · {report.finalizedGames} finalized {report.finalizedGames === 1 ? 'game' : 'games'}
-              </p>
+              <div className="stage-title">
+                {report.club.name ? (
+                  <p className="stage-club">
+                    {report.club.name}
+                    {report.club.tagline ? <span className="stage-tagline">{report.club.tagline}</span> : null}
+                  </p>
+                ) : null}
+                <p className="stage-scope">
+                  {report.scopeLabel} · {report.finalizedGames} finalized {report.finalizedGames === 1 ? 'game' : 'games'}
+                </p>
+              </div>
               <button className="celebrate" onClick={() => setBurst((b) => b + 1)}>
                 <span className="btn-icon" aria-hidden="true">🎉</span>Celebrate
               </button>
             </div>
             <ChampionBanner report={report} />
-            <Podium spots={report.podium} />
+            <Podium steps={report.podiumSteps} />
             {report.note ? <p className="stage-note">{report.note}</p> : null}
           </div>
 

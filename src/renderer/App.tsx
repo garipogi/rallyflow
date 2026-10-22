@@ -10,6 +10,8 @@ import { CourtBoard } from './CourtBoard';
 import { CourtOperations } from './CourtOperations';
 import { Reports } from './Reports';
 import { Awards } from './Awards';
+import { COURT_CHOICES, TEAM_UP_CHOICES } from './teamUpOptions';
+import type { TeamUpStyle } from '../core/rotation';
 import type { Player, RosterEntry, Session, SessionState } from '../data/types';
 
 interface AppearanceControl {
@@ -532,6 +534,7 @@ function AppBody({ initialAppearance }: { initialAppearance: Appearance }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [courtCount, setCourtCount] = useState(4);
+  const [teamUp, setTeamUp] = useState<TeamUpStyle>('balanced');
   const [showReports, setShowReports] = useState(false);
   const [awardsFor, setAwardsFor] = useState<{ sessionId: string | null } | null>(null);
 
@@ -627,9 +630,19 @@ function AppBody({ initialAppearance }: { initialAppearance: Appearance }) {
           <label className="field">
             Courts
             <select value={courtCount} onChange={(e) => setCourtCount(Number(e.target.value))}>
-              {[2, 3, 4].map((n) => (
-                <option key={n} value={n}>
-                  {n}
+              {COURT_CHOICES.map((c) => (
+                <option key={c.value} value={c.value}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="field">
+            Team-up style
+            <select value={teamUp} onChange={(e) => setTeamUp(e.target.value as TeamUpStyle)}>
+              {TEAM_UP_CHOICES.map((c) => (
+                <option key={c.value} value={c.value}>
+                  {c.label}
                 </option>
               ))}
             </select>
@@ -638,7 +651,15 @@ function AppBody({ initialAppearance }: { initialAppearance: Appearance }) {
             className="cta"
             disabled={name.trim() === ''}
             onClick={async () => {
-              const created = await call(window.openPlay.createSession({ name, courtCount }));
+              // D15: 1 court is an explicit opt-in; D16: Balanced is the default, so only other styles are sent
+              const created = await call(
+                window.openPlay.createSession({
+                  name,
+                  courtCount,
+                  ...(courtCount === 1 ? { allowSingleCourt: true } : {}),
+                  ...(teamUp !== 'balanced' ? { teamUp } : {}),
+                }),
+              );
               if (created) {
                 setName('');
                 notify(`Session "${created.name}" started. Let the rallies flow!`, { icon: '🎾' });

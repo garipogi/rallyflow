@@ -39,7 +39,15 @@
 .cer-top { position: absolute; top: 3cqh; left: 3cqw; right: 3cqw; display: flex; justify-content: space-between; align-items: center; font-size: 2.5cqh; font-weight: 700; color: #e9f1ec; z-index: 3; }
 .cer-brand { display: inline-flex; align-items: center; gap: 1cqw; letter-spacing: 0.04em; }
 .cer-brand .logo { width: 4.6cqh; height: 4.6cqh; }
-.cer-scope { opacity: 0.9; }
+.cer-scope { opacity: 0.9; flex: none; max-width: 34cqw; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cer-brand.has-club { gap: 1.2cqw; min-width: 0; max-width: 58cqw; letter-spacing: 0; }
+.cer-club-badge { flex: none; display: grid; place-items: center; width: 5.6cqh; height: 5.6cqh; border-radius: 50%; font-size: 3cqh; line-height: 1; background: radial-gradient(circle at 35% 30%, #fff3b0, #f0bf2a 60%, #b8860b); box-shadow: 0 0 0 0.35cqh rgba(255, 255, 255, 0.85), 0 0.6cqh 1.6cqh rgba(0, 0, 0, 0.35); }
+.cer-club { display: flex; flex-direction: column; min-width: 0; line-height: 1.12; }
+.cer-club-name { font-size: 3cqh; font-weight: 850; color: #ffffff; letter-spacing: 0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 0.3cqh 1cqh rgba(0, 0, 0, 0.35); }
+.cer-club-tag { font-size: 1.8cqh; font-weight: 600; color: #ffe9a8; letter-spacing: 0.04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.step-intro .cer-brand.has-club { visibility: hidden; }
+.cer-credit { position: absolute; right: 3cqw; bottom: 3cqh; z-index: 3; display: inline-flex; align-items: center; gap: 0.6cqw; font-size: 1.9cqh; font-weight: 700; letter-spacing: 0.04em; color: rgba(233, 241, 236, 0.75); }
+.cer-credit .logo { width: 2.8cqh; height: 2.8cqh; }
 .cer-content { position: absolute; inset: 0; z-index: 2; }
 .cer-center { position: absolute; inset: 9cqh 5cqw 10cqh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 1.6cqh; }
 .cer-kicker { margin: 0; font-size: 3.4cqh; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold); font-weight: 800; }
@@ -52,6 +60,13 @@
 .cer-medal { position: relative; margin: 2.8cqh 0 1.2cqh; width: 20cqh; height: 20cqh; border-radius: 50%; display: grid; place-items: center; font-size: 11cqh; line-height: 1;
   background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.45), color-mix(in srgb, var(--hl) 60%, #101010) 72%);
   box-shadow: 0 0 0 0.9cqh rgba(255, 213, 74, 0.45), 0 0 9cqh color-mix(in srgb, var(--hl) 70%, transparent), inset 0 -1.4cqh 3cqh rgba(0, 0, 0, 0.35); }
+.cer-club-hero { margin: 0; max-width: 88cqw; font-size: 8cqh; font-weight: 900; line-height: 1.05; letter-spacing: -0.01em; overflow-wrap: anywhere;
+  background: linear-gradient(180deg, #ffffff 25%, #ffe58f 70%, #f5b400 100%); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0.6cqh 2cqh rgba(0, 0, 0, 0.45)); }
+.cer-club-tagline { margin: -0.4cqh 0 0; font-size: 3cqh; font-style: italic; font-weight: 600; color: #f1f6f3; max-width: 72cqw; }
+.cer-intro.has-club .cer-medal { width: 15cqh; height: 15cqh; font-size: 8.5cqh; margin: 2.4cqh 0 1cqh; }
+.cer-intro.has-club .cer-headline { font-size: 7.5cqh; }
+.cer-thanks { font-size: 3.2cqh; color: #ffe9a8; }
+.cer-thanks strong { color: #ffffff; }
 .cer-medal::after { content: ''; position: absolute; inset: -2.2cqh; border-radius: 50%; border: 0.35cqh dashed rgba(255, 213, 74, 0.7); animation: cer-spin 14s linear infinite; }
 
 /* ---------- Suspense ---------- */
@@ -111,6 +126,8 @@
 .cer-finale { position: absolute; inset: 8.5cqh 6cqw 8.5cqh; display: flex; flex-direction: column; align-items: center; }
 .cer-finale-head { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 0.8cqh; min-height: 24cqh; justify-content: flex-end; }
 .cer-finale .cer-winner.one { font-size: 9.5cqh; }
+.cer-finale .cer-winner.few { font-size: 7cqh; }
+.cer-finale .cer-winner.many { font-size: 5.2cqh; }
 .cer-finale .cer-avatar.big { width: 14cqh; height: 14cqh; font-size: 5.2cqh; }
 .cer-finale .cer-avatar { width: 10cqh; height: 10cqh; font-size: 3.8cqh; }
 .cer-finale .cer-story { font-size: 2.8cqh; }
@@ -126,7 +143,12 @@
 .p1 .cer-pstep { height: 19cqh; background: linear-gradient(180deg, #ffe680 0%, #f0bf2a 45%, #c8950f 100%); }
 .p2 .cer-pstep { height: 14cqh; background: linear-gradient(180deg, #f4f6f8 0%, #cdd4da 45%, #9fa9b1 100%); }
 .p3 .cer-pstep { height: 9.5cqh; background: linear-gradient(180deg, #f6c18f 0%, #d48a4c 45%, #a35f28 100%); }
-.cer-pcol.empty { visibility: hidden; }
+.cer-pcol.vacant .cer-pstep { opacity: 0.35; filter: saturate(0.4); }
+.cer-pcap { margin-top: 0.3cqh; font-size: 1.9cqh; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #ffe48a; padding: 0.3cqh 1cqw; border-radius: 999px; border: 0.25cqh solid rgba(255, 213, 74, 0.65); background: rgba(255, 213, 74, 0.14); white-space: nowrap; }
+.cer-pcol.n2 .cer-pname, .cer-pcol.n3 .cer-pname { font-size: 2.8cqh; }
+.cer-pcol.p1.n2 .cer-pname, .cer-pcol.p1.n3 .cer-pname { font-size: 3.2cqh; }
+.cer-pcol.n3 .cer-avatar { width: 8.5cqh; height: 8.5cqh; font-size: 3.2cqh; }
+.cer-pcol.n3 .cer-avatar + .cer-avatar { margin-left: -2.4cqh; }
 .cer-finale .cer-applause { position: absolute; top: -5.5cqh; left: 50%; translate: -50% 0; margin: 0; font-size: 2.6cqh; white-space: nowrap; }
 
 /* ---------- Outro ---------- */
@@ -288,3 +310,25 @@ button.chip.active { background: var(--accent); color: var(--accent-contrast); b
 .lib-grid { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
 .award-card.pending-card { border-style: dashed; }
 .award-card.pending-card::before { background: var(--serve); }
+
+/* ---------- Awards tab: club / group name ---------- */
+.club-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 0 0 12px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+.club-current { display: inline-flex; align-items: baseline; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.club-label { font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.club-value { font-size: 17px; overflow-wrap: anywhere; }
+.club-value.unset { color: var(--muted); font-weight: 600; font-style: italic; }
+.club-note { font-size: 13px; color: var(--muted); }
+.club-saved { font-size: 14px; font-weight: 650; color: var(--text); }
+.club-editor { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px 14px; align-items: end; margin: 0 0 12px; padding: 12px 14px; border: 1px solid var(--accent); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow-1); }
+.club-editor.compact { grid-template-columns: 1fr; margin: 0; padding: 0; border: 0; box-shadow: none; background: transparent; }
+.club-editor .field input { width: 100%; box-sizing: border-box; }
+.club-editor .club-hint, .club-editor .error, .club-actions { grid-column: 1 / -1; margin: 0; }
+.club-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.stage-title { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.stage-club { margin: 0; font-size: 22px; font-weight: 850; color: #ffffff; letter-spacing: 0.01em; overflow-wrap: anywhere; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.stage-tagline { font-size: 14px; font-weight: 600; font-style: italic; color: #ffe9a8; }
+.ap-club .club-editor .hint { font-size: 13px; }
+
+@media print {
+  .cert-club { margin: 2mm 0 0; font-size: 15pt; font-weight: 700; color: #1f5a40; letter-spacing: 0.04em; font-family: system-ui, sans-serif; }
+}

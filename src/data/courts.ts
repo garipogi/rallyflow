@@ -17,10 +17,20 @@ function toCourt(row: CourtRow): Court {
   return { id: row.id, sessionId: row.session_id, label: row.label, status: row.status };
 }
 
-/** Brief §2: a session runs on 2 to 4 courts. */
-export function assertValidCourtCount(count: number): void {
-  if (!Number.isInteger(count) || count < 2 || count > 4) {
-    throw new ValidationError(`Court count must be a whole number from 2 to 4 (got ${String(count)}).`);
+/**
+ * D15 single-court sessions: the organizer asked for 1-court sessions (small groups). They are an
+ * explicit opt-in so the brief's 2-4 court contract, and the locked tests that hold it, stay intact:
+ * callers that do not pass `allowSingleCourt: true` still get a ValidationError for 1 court.
+ */
+export interface CourtCountOptions {
+  allowSingleCourt?: boolean;
+}
+
+/** Brief §2: a session runs on 2 to 4 courts; 1 court only with the D15 opt-in. */
+export function assertValidCourtCount(count: number, opts: CourtCountOptions = {}): void {
+  const min = opts.allowSingleCourt === true ? 1 : 2;
+  if (!Number.isInteger(count) || count < min || count > 4) {
+    throw new ValidationError(`Court count must be a whole number from ${min} to 4 (got ${String(count)}).`);
   }
 }
 
@@ -38,10 +48,11 @@ export function listCourts(db: Db, sessionId: string): Court[] {
   return rows.map(toCourt);
 }
 
-export function setCourtCount(db: Db, sessionId: string, count: number): Court[] {
+/** Resize the session's courts (2-4; 1 only with `allowSingleCourt: true`, D15). */
+export function setCourtCount(db: Db, sessionId: string, count: number, opts: CourtCountOptions = {}): Court[] {
   return withTransaction(db, () => {
     assertSessionWritable(db, sessionId);
-    assertValidCourtCount(count);
+    assertValidCourtCount(count, opts);
     const sqlite = raw(db);
     const dropped = sqlite
       .prepare('SELECT id FROM courts WHERE session_id = ? AND removed = 0 AND number > ?')

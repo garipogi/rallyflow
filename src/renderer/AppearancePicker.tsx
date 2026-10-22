@@ -7,6 +7,7 @@ import {
   type ThemeDef,
   type ThemeMode,
 } from '../shared/themes';
+import { ClubNameEditor } from './ClubNameEditor';
 import { applyThemeToPage, systemPrefersDark, watchSystemMode } from './theme/appearance';
 
 const MODE_LABEL: Record<ThemeMode, { label: string; icon: string }> = {
@@ -169,6 +170,10 @@ export function AppearancePicker({ appearance, systemDark, onChange }: { appeara
             </div>
           </fieldset>
           <p className="hint ap-note">The display window switches to the same theme within a second.</p>
+          <fieldset className="ap-club">
+            <legend>Club name on the awards</legend>
+            <ClubNameEditor compact />
+          </fieldset>
         </div>
       ) : null}
     </div>

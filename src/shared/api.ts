@@ -1,4 +1,4 @@
-import type { QueueEntry, Recommendation, RecommendationResult, RotationSettings } from '../core/rotation';
+import type { QueueEntry, Recommendation, RecommendationResult, RotationSettings, TeamUpStyle } from '../core/rotation';
 import type { GameState, ScoreLog, ScoringEvent, TeamId } from '../core/scoring';
 import type { AwardLibrary, AwardsReport, AwardsScope } from '../data/awards';
 import type { AwardLineup, AwardPick, AwardPicks } from '../core/awards/lineup';
@@ -7,6 +7,7 @@ import type { BackupManifest } from '../data/backup';
 import type { PlayerLeaderboardRow } from '../data/stats';
 import type { DisplayModel } from '../core/display';
 import type { Appearance } from './themes';
+import type { ClubInfo, ClubSettings } from './club';
 import type {
   Availability,
   Court,
@@ -26,6 +27,15 @@ export interface NewSessionInput {
   name: string;
   courtCount: number;
   targetScore?: number;
+  /** D15: required to create a 1-court session (small group); without it courts must be 2 to 4. */
+  allowSingleCourt?: boolean;
+  /** D16: the team-up style to start with; absent = Balanced (D14). */
+  teamUp?: TeamUpStyle;
+}
+
+/** D15: pass `allowSingleCourt: true` to resize a session down to 1 court. */
+export interface CourtCountOptions {
+  allowSingleCourt?: boolean;
 }
 
 export interface RenamePlayerInput {
@@ -60,7 +70,7 @@ export interface OrganizerApi {
    * renderer), then deletes it. `value` is true when deleted, false when the organizer cancelled.
    */
   deleteSession(sessionId: string): Promise<ApiResult<boolean>>;
-  setCourtCount(sessionId: string, count: number): Promise<ApiResult<Court[]>>;
+  setCourtCount(sessionId: string, count: number, opts?: CourtCountOptions): Promise<ApiResult<Court[]>>;
   setCourtStatus(courtId: string, status: CourtStatus): Promise<ApiResult<Court>>;
   listPlayers(): Promise<ApiResult<Player[]>>;
   addExistingPlayer(sessionId: string, playerId: string): Promise<ApiResult<RosterEntry>>;
@@ -139,6 +149,12 @@ export interface OrganizerApi {
   getAppearance(): Promise<ApiResult<Appearance>>;
   /** Saves the appearance; both windows (and native dialogs) follow it straight away. */
   setAppearance(appearance: Appearance): Promise<ApiResult<Appearance>>;
+  /** The club or group name and tagline for the awards, plus this session's name override (if any). */
+  getClub(sessionId?: string | null): Promise<ApiResult<ClubInfo>>;
+  /** Saves the club name and tagline (validated, up to 60 / 80 characters; '' clears). */
+  setClub(club: ClubSettings): Promise<ApiResult<ClubSettings>>;
+  /** Saves (or clears with '') a session's name override for its awards. */
+  setSessionClubName(sessionId: string, name: string): Promise<ApiResult<ClubInfo>>;
 }
 
 /** Per-court extras for the large screen: when the game started, game point, the last result. */
@@ -241,4 +257,7 @@ export const API_METHODS: readonly ApiMethod[] = [
   'endCeremonyOnDisplay',
   'getAppearance',
   'setAppearance',
+  'getClub',
+  'setClub',
+  'setSessionClubName',
 ];

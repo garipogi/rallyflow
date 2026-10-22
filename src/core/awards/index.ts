@@ -21,6 +21,9 @@ import {
   type PlayerStats,
   type StatsGame,
 } from '../stats';
+import { placePodium, type PodiumPlayer, type PodiumStep } from './podium';
+
+export { placePodium, podiumCaption, podiumLayout, ordinal, type PodiumPlayer, type PodiumStep, type PodiumStepNo } from './podium';
 
 export interface AwardGame extends StatsGame {
   /** When the game ended (ISO 8601). Orders the games for win streaks. */
@@ -79,9 +82,10 @@ export interface Award {
 
 export type PodiumPlace = 1 | 2 | 3;
 
+/** One official D9 place (competition ranking: a tie for 1st means there is no 2nd place). */
 export interface PodiumSpot {
   place: PodiumPlace;
-  players: Array<AwardWinner & { wins: number; losses: number; winPct: number; pointDiff: number; gamesPlayed: number }>;
+  players: PodiumPlayer[];
   record: string;
 }
 
@@ -92,6 +96,8 @@ export interface AwardsResult {
   /** True when nobody reached the D9 threshold and the podium shows the best records so far. */
   provisional: boolean;
   podium: PodiumSpot[];
+  /** The podium as drawn: gold, silver and bronze filled in order, ties sharing a step (podium.ts). */
+  podiumSteps: PodiumStep[];
   awards: Award[];
   /** A kind sentence for the organizer when the podium is provisional; null otherwise. */
   note: string | null;
@@ -171,7 +177,7 @@ export function computeAwards(input: AwardsInput): AwardsResult {
   const nominate = <T,>(ranked: { best: T[]; sorted: T[] }, id: (t: T) => string): AwardWinner[][] => nomineeUnits(ranked, (t) => [winner(id(t))], byUnit);
 
   if (finalized.length === 0) {
-    return { scope: input.scope, finalizedGames: 0, threshold, provisional: false, podium: [], awards: [], note: null };
+    return { scope: input.scope, finalizedGames: 0, threshold, provisional: false, podium: [], podiumSteps: [], awards: [], note: null };
   }
 
   const stats = computePlayerStats(finalized).filter((s) => s.gamesPlayed > 0);
@@ -202,6 +208,9 @@ export function computeAwards(input: AwardsInput): AwardsResult {
       .sort(byName);
     podium.push({ place, players, record: record(rows[0] as PlayerStats) });
   }
+  const podiumSteps = placePodium(
+    standings.map((s) => ({ ...winner(s.playerId), wins: s.wins, losses: s.losses, winPct: s.winPct, pointDiff: s.pointDiff, gamesPlayed: s.gamesPlayed, rank: s.rank })),
+  ).map((step) => ({ ...step, players: [...step.players].sort(byName) }));
 
   const top = standings.filter((s) => s.rank === 1);
   const champ = top[0] as PlayerStats;
@@ -462,7 +471,7 @@ export function computeAwards(input: AwardsInput): AwardsResult {
   const note = provisional
     ? `Nobody has played ${plural(threshold, 'finalized game')} yet, so the podium is provisional and based on the best record so far.`
     : null;
-  return { scope: input.scope, finalizedGames: finalized.length, threshold, provisional, podium, awards, note };
+  return { scope: input.scope, finalizedGames: finalized.length, threshold, provisional, podium, podiumSteps, awards, note };
 }
 
 /**

@@ -47,10 +47,18 @@ function requireSession(db: Db, id: string): Session {
 
 export function createSession(
   db: Db,
-  input: { name: string; courtCount: number; targetScore?: number; winBy?: number; startedAt?: string },
+  input: {
+    name: string;
+    courtCount: number;
+    targetScore?: number;
+    winBy?: number;
+    startedAt?: string;
+    /** D15: opt in to a 1-court session; without it the court count must be 2 to 4. */
+    allowSingleCourt?: boolean;
+  },
 ): Session {
   return withTransaction(db, () => {
-    assertValidCourtCount(input.courtCount);
+    assertValidCourtCount(input.courtCount, { allowSingleCourt: input.allowSingleCourt === true });
     const name = input.name.trim();
     if (name === '') throw new ValidationError('A session needs a name.');
     const targetScore = input.targetScore ?? 11;

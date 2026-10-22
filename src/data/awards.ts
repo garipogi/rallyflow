@@ -1,10 +1,12 @@
 import type { Db } from './db';
 import { ValidationError } from './errors';
+import { getClubBranding } from './club';
 import { listGames } from './games';
 import { listRoster } from './roster';
 import { loadScoreLog } from './scoring';
 import { getSession, listSessions } from './sessions';
 import { raw } from './sqlite';
+import type { ClubBranding } from '../shared/club';
 import { computeAwards, type AwardGame, type AwardsResult, type AwardWinner } from '../core/awards';
 import {
   addToLineup,
@@ -56,6 +58,8 @@ export interface AwardsReport extends AwardsResult {
   roster: AwardWinner[];
   /** Players whose first session this is (session scope). */
   firstTimers: string[];
+  /** The club or group name (and tagline) shown on the ceremony; name '' when not set. */
+  club: ClubBranding;
 }
 
 export interface AwardLibrary {
@@ -252,6 +256,7 @@ export function getAwards(db: Db, scope: AwardsScope): AwardsReport {
     skipped: show.skipped,
     roster: data.roster,
     firstTimers: data.firstTimers,
+    club: getClubBranding(db, data.sessionId),
   };
 }
 

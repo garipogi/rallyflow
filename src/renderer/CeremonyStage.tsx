@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import type { AwardsReport } from '../data/awards';
-import type { AwardWinner, PodiumSpot } from '../core/awards';
+import { podiumCaption, podiumLayout, type AwardWinner, type PodiumStep } from '../core/awards';
 import type { ShowAward } from '../core/awards/lineup';
 import {
   buildSteps,
@@ -16,7 +16,8 @@ import {
 import { initialsOf, playerHue } from '../shared/engage';
 import { AVATAR_LIGHTNESS, AVATAR_SATURATION, AVATAR_TEXT } from '../shared/themes';
 import { BRAND } from '../shared/brand';
-import { accentFor, Confetti } from './AwardsCeremony';
+import { clubHeader, type ClubBranding } from '../shared/club';
+import { accentFor, Confetti, podiumNames } from './AwardsCeremony';
 import { Logo } from './ui/Logo';
 
 /**
@@ -102,16 +103,36 @@ function Dots({ steps, current }: { steps: readonly CeremonyStep[]; current: num
 }
 
 function Intro({ report, count }: { report: AwardsReport; count: number }) {
+  const club = report.club;
+  const hasClub = Boolean(club?.name);
   return (
-    <div className="cer-center cer-intro">
-      <p className="cer-kicker anim" style={css({ '--d': '0ms' })}>Welcome to the</p>
-      <div className="cer-medal anim pop" style={css({ '--d': '250ms', '--hl': '#ffd54a' })}>
+    <div className={`cer-center cer-intro${hasClub ? ' has-club' : ''}`}>
+      {hasClub ? (
+        <>
+          <p className="cer-club-hero anim" style={css({ '--d': '0ms' })}>
+            {club.name}
+          </p>
+          {club.tagline ? (
+            <p className="cer-club-tagline anim" style={css({ '--d': '250ms' })}>
+              {club.tagline}
+            </p>
+          ) : null}
+          <p className="cer-kicker anim" style={css({ '--d': '500ms' })}>
+            proudly presents
+          </p>
+        </>
+      ) : (
+        <p className="cer-kicker anim" style={css({ '--d': '0ms' })}>
+          Welcome to the
+        </p>
+      )}
+      <div className="cer-medal anim pop" style={css({ '--d': hasClub ? '800ms' : '250ms', '--hl': '#ffd54a' })}>
         <span aria-hidden="true">🏆</span>
       </div>
-      <h2 className="cer-headline anim" style={css({ '--d': '600ms' })}>
-        {BRAND.name} Awards
+      <h2 className="cer-headline anim" style={css({ '--d': hasClub ? '1100ms' : '600ms' })}>
+        {hasClub ? 'The Awards Ceremony' : `${BRAND.name} Awards`}
       </h2>
-      <p className="cer-sub anim" style={css({ '--d': '1000ms' })}>
+      <p className="cer-sub anim" style={css({ '--d': hasClub ? '1400ms' : '1000ms' })}>
         {report.scopeLabel} · {count} {count === 1 ? 'award' : 'awards'} · {report.finalizedGames} {report.finalizedGames === 1 ? 'game' : 'games'}
       </p>
       <p className="cer-hint anim" style={css({ '--d': '1800ms' })}>
@@ -227,7 +248,8 @@ function Reveal({ award, elapsed, late }: { award: ShowAward; elapsed: number; l
 const PLACE_DELAY: Record<1 | 2 | 3, number> = { 3: FINALE_AT.third, 2: FINALE_AT.second, 1: FINALE_AT.first };
 const MEDALS: Record<1 | 2 | 3, string> = { 1: '🥇', 2: '🥈', 3: '🥉' };
 
-function Finale({ award, podium, late }: { award: ShowAward; podium: PodiumSpot[]; late: number }) {
+function Finale({ award, steps, late }: { award: ShowAward; steps: PodiumStep[]; late: number }) {
+  const size = award.groups.length > 2 ? 'many' : award.groups.length > 1 ? 'few' : 'one';
   return (
     <div className="cer-finale">
       <Fireworks late={late} at={FINALE_AT.first + 150} />
@@ -236,7 +258,7 @@ function Finale({ award, podium, late }: { award: ShowAward; podium: PodiumSpot[
           <span aria-hidden="true">{award.icon}</span> {award.title}
           {award.provisional ? ' · provisional' : ''}
         </p>
-        <h2 className="cer-winner one anim zoom" style={css({ '--d': `${FINALE_AT.first + 250}ms` })}>
+        <h2 className={`cer-winner ${size} anim zoom`} style={css({ '--d': `${FINALE_AT.first + 250}ms` })}>
           {award.groups.map((g) => unitName(g)).join(' and ')}
         </h2>
         <p className="cer-story anim" style={css({ '--d': `${FINALE_AT.story}ms` })}>
@@ -244,29 +266,34 @@ function Finale({ award, podium, late }: { award: ShowAward; podium: PodiumSpot[
         </p>
       </div>
       <ol className="cer-podium" aria-label="Podium">
-        {([2, 1, 3] as const).map((place) => {
-          const spot = podium.find((p) => p.place === place);
+        {podiumLayout(steps).map(({ step: place, spot }) => {
+          const caption = spot ? podiumCaption(spot) : null;
+          const people = spot ? Math.min(spot.players.length, 3) : 0;
           return (
-            <li key={place} className={`cer-pcol p${place}${spot ? '' : ' empty'}`} style={css({ '--d': `${PLACE_DELAY[place]}ms` })}>
+            <li
+              key={place}
+              className={`cer-pcol p${place}${spot ? '' : ' vacant'}${spot?.tied ? ' tied' : ''} n${people}`}
+              data-step={place}
+              style={css({ '--d': `${PLACE_DELAY[place]}ms` })}
+            >
               {spot ? (
-                <>
-                  <div className="cer-pnames anim pop" style={css({ '--d': `${PLACE_DELAY[place] + 500}ms` })}>
-                    <span className="cer-pmedal" aria-hidden="true">
-                      {MEDALS[place]}
-                    </span>
-                    <span className="cer-pavatars">
-                      {spot.players.slice(0, 3).map((p) => (
-                        <CerAvatar key={p.playerId} winner={p} big={place === 1} />
-                      ))}
-                    </span>
-                    <span className="cer-pname">{spot.players.map((p) => p.name).join(' & ')}</span>
-                    <span className="cer-precord">{spot.record}</span>
-                  </div>
-                  <div className="cer-pstep anim grow" style={css({ '--d': `${PLACE_DELAY[place]}ms` })}>
-                    <span>{place}</span>
-                  </div>
-                </>
+                <div className="cer-pnames anim pop" style={css({ '--d': `${PLACE_DELAY[place] + 500}ms` })}>
+                  <span className="cer-pmedal" aria-hidden="true">
+                    {MEDALS[place]}
+                  </span>
+                  <span className="cer-pavatars">
+                    {spot.players.slice(0, 3).map((p) => (
+                      <CerAvatar key={p.playerId} winner={p} big={place === 1 && people === 1} />
+                    ))}
+                  </span>
+                  <span className="cer-pname">{podiumNames(spot.players)}</span>
+                  <span className="cer-precord">{spot.record}</span>
+                  {caption ? <span className="cer-pcap">{caption}</span> : null}
+                </div>
               ) : null}
+              <div className="cer-pstep anim grow" style={css({ '--d': `${PLACE_DELAY[place]}ms` })}>
+                <span>{place}</span>
+              </div>
             </li>
           );
         })}
@@ -278,7 +305,7 @@ function Finale({ award, podium, late }: { award: ShowAward; podium: PodiumSpot[
   );
 }
 
-function Outro({ awards }: { awards: ShowAward[] }) {
+function Outro({ awards, club }: { awards: ShowAward[]; club: ClubBranding | undefined }) {
   const given = awards.filter((a) => !a.pending && a.groups.length > 0);
   return (
     <div className="cer-center cer-outro">
@@ -288,6 +315,11 @@ function Outro({ awards }: { awards: ShowAward[] }) {
       <h2 className="cer-headline anim" style={css({ '--d': '250ms' })}>
         Congratulations to every player
       </h2>
+      {club?.name ? (
+        <p className="cer-sub cer-thanks anim" style={css({ '--d': '400ms' })}>
+          Thank you for playing with <strong>{club.name}</strong>
+        </p>
+      ) : null}
       <ul className={`cer-wrap count-${Math.min(given.length, 12)}`}>
         {given.slice(0, 12).map((a, i) => (
           <li key={a.key} className="cer-wrap-item anim" style={css({ '--d': `${500 + i * 90}ms`, '--hl': accentFor(a) })}>
@@ -313,13 +345,13 @@ function PhaseContent({ report, state, step, elapsed }: { report: AwardsReport; 
   let confettiAt: number | null = null;
   if (step.kind === 'intro') body = <Intro report={report} count={report.lineup.length} />;
   else if (step.kind === 'outro') {
-    body = <Outro awards={report.lineup} />;
+    body = <Outro awards={report.lineup} club={report.club} />;
     confettiAt = 400;
   } else if (award) {
     if (state.phase === 'title') body = <TitleCard award={award} />;
     else if (state.phase === 'suspense') body = <Suspense award={award} elapsed={elapsed} suspenseMs={SUSPENSE_MS[state.suspense]} />;
     else if (step.finale) {
-      body = <Finale award={award} podium={report.podium} late={late} />;
+      body = <Finale award={award} steps={report.podiumSteps} late={late} />;
       confettiAt = FINALE_AT.first;
     } else {
       body = <Reveal award={award} elapsed={elapsed} late={late} />;
@@ -360,14 +392,32 @@ export function CeremonyStage({ report, state, preview = false }: { report: Awar
         <span className="cer-floor" />
       </div>
       <header className="cer-top">
-        <span className="cer-brand">
-          <Logo size={40} />
-          <span>{BRAND.name} Awards</span>
-        </span>
+        {report.club?.name ? (
+          <span className="cer-brand has-club">
+            <span className="cer-club-badge" aria-hidden="true">
+              🏆
+            </span>
+            <span className="cer-club">
+              <span className="cer-club-name">{clubHeader(report.club)}</span>
+              {report.club.tagline ? <span className="cer-club-tag">{report.club.tagline}</span> : null}
+            </span>
+          </span>
+        ) : (
+          <span className="cer-brand">
+            <Logo size={40} />
+            <span>{clubHeader(report.club)}</span>
+          </span>
+        )}
         <span className="cer-scope">{report.scopeLabel}</span>
       </header>
       <PhaseContent key={`${state.step}:${state.phase}`} report={report} state={state} step={step} elapsed={elapsed} />
       <Dots steps={steps} current={state.step} />
+      {report.club?.name ? (
+        <span className="cer-credit">
+          <Logo size={22} />
+          {BRAND.name} Awards
+        </span>
+      ) : null}
       {state.paused ? <p className="cer-paused">Paused</p> : null}
     </div>
   );

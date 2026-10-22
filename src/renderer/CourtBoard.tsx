@@ -17,6 +17,7 @@ import { formatElapsed, gamePointTeam } from '../shared/engage';
 import { Confetti } from './AwardsCeremony';
 import { Avatar } from './ui/Avatar';
 import { IdleCourt } from './ui/Logo';
+import { COURT_CHOICES } from './teamUpOptions';
 
 /** Re-renders the caller every `ms` while mounted. */
 function useNow(ms: number): number {
@@ -447,11 +448,15 @@ export function CourtBoard({ sessionId, courts, roster, games, readOnly, courtCo
           <select
             value={courtCount}
             disabled={readOnly}
-            onChange={(e) => void run(window.openPlay.setCourtCount(sessionId, Number(e.target.value)))}
+            onChange={(e) => {
+              const count = Number(e.target.value);
+              // D15: 1 court is the explicit single-court opt-in
+              void run(window.openPlay.setCourtCount(sessionId, count, count === 1 ? { allowSingleCourt: true } : undefined));
+            }}
           >
-            {[2, 3, 4].map((n) => (
-              <option key={n} value={n}>
-                {n}
+            {COURT_CHOICES.map((c) => (
+              <option key={c.value} value={c.value}>
+                {c.label}
               </option>
             ))}
           </select>
