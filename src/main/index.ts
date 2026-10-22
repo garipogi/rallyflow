@@ -4,6 +4,8 @@ import { join } from 'node:path';
 import { BRAND, DISPLAY_TITLE, ORGANIZER_TITLE } from '../shared/brand';
 import { openDatabase, type Db } from '../data/db';
 import { loadSessionState } from '../data/sessions';
+import { getRotationSettings } from '../data/rotation';
+import { scoreEntryOf } from '../core/scoring/quickResult';
 import { createApiHandlers, type DbStore, type HostServices } from './handlers';
 import { readCourtExtras, readDisplayModel } from './displayModel';
 import { API_METHODS, type DisplayMode, type DisplayPayload } from '../shared/api';
@@ -375,6 +377,7 @@ app.whenReady().then(() => {
         sessionName,
         model: readDisplayModel(db, displaySessionId),
         courtExtras: readCourtExtras(db, displaySessionId),
+        scoreEntry: scoreEntryOf(getRotationSettings(db, displaySessionId)),
       };
     } catch {
       return idle;

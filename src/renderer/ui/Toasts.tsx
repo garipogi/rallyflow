@@ -2,14 +2,32 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 
 export type ToastTone = 'success' | 'info' | 'celebrate';
 
+/** A button on the toast (for example Undo). Pressing it runs the action and dismisses the toast. */
+export interface ToastAction {
+  label: string;
+  /** Accessible name when the label alone is too short ("Undo result on Court 1"). */
+  ariaLabel?: string;
+  run: () => void;
+}
+
 interface Toast {
   id: number;
   tone: ToastTone;
   icon: string;
   text: string;
+  action?: ToastAction;
+  lifetime: number;
 }
 
-type Notify = (text: string, opts?: { tone?: ToastTone; icon?: string }) => void;
+export interface NotifyOptions {
+  tone?: ToastTone;
+  icon?: string;
+  action?: ToastAction;
+  /** How long the toast stays, in ms (default 3.8 s; toasts with an action usually stay longer). */
+  durationMs?: number;
+}
+
+type Notify = (text: string, opts?: NotifyOptions) => void;
 
 const ToastContext = createContext<Notify>(() => undefined);
 
@@ -40,8 +58,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       next.current += 1;
       const tone = opts?.tone ?? 'success';
       const icon = opts?.icon ?? (tone === 'celebrate' ? '🎉' : tone === 'info' ? 'ℹ️' : '✓');
-      setToasts((list) => [...list, { id, tone, icon, text }].slice(-MAX_TOASTS));
-      timers.current.set(id, window.setTimeout(() => dismiss(id), LIFETIME_MS));
+      const lifetime = opts?.durationMs ?? LIFETIME_MS;
+      const toast: Toast = { id, tone, icon, text, lifetime, ...(opts?.action ? { action: opts.action } : {}) };
+      setToasts((list) => [...list, toast].slice(-MAX_TOASTS));
+      timers.current.set(id, window.setTimeout(() => dismiss(id), lifetime));
     },
     [dismiss],
   );
@@ -58,11 +78,28 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {children}
       <div className="toast-region" role="status" aria-live="polite">
         {toasts.map((t) => (
-          <div key={t.id} className={`toast toast-${t.tone}`}>
+          <div
+            key={t.id}
+            className={`toast toast-${t.tone}${t.action ? ' toast-has-action' : ''}`}
+            style={t.lifetime !== LIFETIME_MS ? { ['--toast-out-delay' as string]: `${Math.max(0, t.lifetime - 400)}ms` } : undefined}
+          >
             <span className="toast-icon" aria-hidden="true">
               {t.icon}
             </span>
             <span className="toast-text">{t.text}</span>
+            {t.action ? (
+              <button
+                className="toast-action"
+                aria-label={t.action.ariaLabel ?? t.action.label}
+                onClick={() => {
+                  const action = t.action;
+                  dismiss(t.id);
+                  action?.run();
+                }}
+              >
+                {t.action.label}
+              </button>
+            ) : null}
             <button className="toast-close" aria-label="Dismiss notification" onClick={() => dismiss(t.id)}>
               ×
             </button>

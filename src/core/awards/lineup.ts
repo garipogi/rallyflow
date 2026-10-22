@@ -176,10 +176,28 @@ export function validateLineup(value: unknown): AwardLineup {
   return { version: LINEUP_VERSION, entries };
 }
 
+/**
+ * Default titles that were renamed in a later version, per library template id. A stored lineup
+ * entry whose title is exactly the old default was never renamed by the organizer (or was renamed
+ * to the same text), so it follows the new default; any other custom title is kept.
+ */
+export const RETIRED_DEFAULT_TITLES: Readonly<Record<string, readonly string[]>> = {
+  speed_demon: ['Speed Demon'],
+};
+
+function dropRetiredTitles(lineup: AwardLineup): AwardLineup {
+  for (const entry of lineup.entries) {
+    if (entry.kind === 'template' && entry.title !== undefined && (RETIRED_DEFAULT_TITLES[entry.id] ?? []).includes(entry.title)) {
+      delete entry.title;
+    }
+  }
+  return lineup;
+}
+
 /** Tolerant read of stored JSON: anything invalid falls back to the default lineup. */
 export function normalizeLineup(value: unknown): AwardLineup {
   try {
-    return validateLineup(value);
+    return dropRetiredTitles(validateLineup(value));
   } catch {
     return defaultLineup();
   }

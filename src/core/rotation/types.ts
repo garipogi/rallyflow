@@ -1,5 +1,7 @@
 /** Types of the pure rotation engine (docs/DECISIONS.md D1-D7). */
 
+import type { ScoreEntryMode } from '../scoring/quickResult';
+
 export type GameFormat = 'singles' | 'doubles';
 
 /** D1: what happens to a player who declines the turn they were offered. */
@@ -174,6 +176,8 @@ export interface RotationSettings {
   challenge?: Partial<ChallengeSettings>;
   /** D17 round robin: the current schedule (generated on request). */
   roundRobin?: RoundRobinSchedule;
+  /** How results are entered on the court cards. Absent = rally scoring (the original flow). */
+  scoreEntry?: ScoreEntryMode;
 }
 
 export const DEFAULT_ROTATION_SETTINGS: RotationSettings = {

@@ -13,6 +13,9 @@ import { Awards } from './Awards';
 import { COURT_CHOICES } from './teamUpOptions';
 import type { Gender, PoolName, TeamUpStyle } from '../core/rotation';
 import { TeamUpPicker, type RosterFix } from './TeamUpPicker';
+import { ScoringModePicker } from './ScoringModePicker';
+import { isQuickResult } from './QuickResult';
+import { DEFAULT_SCORE_ENTRY, scoreEntryOf, scoreLine, type ScoreEntryMode } from '../core/scoring/quickResult';
 import { GENDER_OPTIONS, levelText, parseSkill, PlayerDetailsEditor, POOL_OPTIONS } from './PlayerDetails';
 import type { Player, RosterEntry, Session, SessionState } from '../data/types';
 
@@ -73,12 +76,14 @@ function useChangeToasts(state: SessionState | null) {
       const court = courtLabel.get(game.courtId) ?? 'court';
       if (!old && (game.status === 'scheduled' || game.status === 'in_progress')) {
         notify(`Game started on ${court}`, { icon: '🏓', tone: 'info' });
-      } else if (old && old.status !== 'completed' && game.status === 'completed' && game.winner) {
+      } else if (old && old.status !== 'completed' && game.status === 'completed' && game.winner && !isQuickResult(game.id)) {
         const winners = game.participants
           .filter((p) => p.team === game.winner)
           .map((p) => nameOf.get(p.playerId) ?? '')
           .join(' & ');
-        notify(`Result recorded on ${court}: ${winners} win ${game.teamAScore}-${game.teamBScore}`, { tone: 'celebrate' });
+        const scoreless = game.teamAScore === 0 && game.teamBScore === 0;
+        const score = scoreless ? '' : ` ${scoreLine(Math.max(game.teamAScore, game.teamBScore), Math.min(game.teamAScore, game.teamBScore))}`;
+        notify(`Result recorded on ${court}: ${winners} win${score}`, { tone: 'celebrate' });
       }
     }
   }, [state, notify]);
@@ -345,10 +350,13 @@ function SessionRoom({
   const [newGender, setNewGender] = useState<'' | Gender>('');
   const [details, setDetails] = useState<Record<string, PlayerDetails>>({});
   const [detailsEditor, setDetailsEditor] = useState<{ focus: RosterFix | null } | null>(null);
+  const [scoreEntry, setScoreEntry] = useState<ScoreEntryMode>(DEFAULT_SCORE_ENTRY);
 
   const refresh = useCallback(async () => {
     const loaded = await call(window.openPlay.loadSessionState(sessionId));
     if (loaded) setState(loaded);
+    const settings = await call(window.openPlay.getRotationSettings(sessionId));
+    if (settings) setScoreEntry(scoreEntryOf(settings));
     const players = await call(window.openPlay.listPlayers());
     if (players) setRegistry(players);
     const profile = await call(window.openPlay.listPlayerDetails());
@@ -505,6 +513,8 @@ function SessionRoom({
         games={games}
         readOnly={readOnly}
         courtCount={session.courtCount}
+        scoreEntry={scoreEntry}
+        rules={{ targetScore: session.targetScore, winBy: session.winBy }}
         onChanged={() => void refresh()}
       />
 
@@ -661,6 +671,7 @@ function AppBody({ initialAppearance }: { initialAppearance: Appearance }) {
   const [name, setName] = useState('');
   const [courtCount, setCourtCount] = useState(4);
   const [teamUp, setTeamUp] = useState<TeamUpStyle>('balanced');
+  const [scoreEntry, setScoreEntry] = useState<ScoreEntryMode>(DEFAULT_SCORE_ENTRY);
   const [showReports, setShowReports] = useState(false);
   const [awardsFor, setAwardsFor] = useState<{ sessionId: string | null } | null>(null);
 
@@ -773,6 +784,14 @@ function AppBody({ initialAppearance }: { initialAppearance: Appearance }) {
               return true;
             }}
           />
+          <ScoringModePicker
+            value={scoreEntry}
+            layout="field"
+            onApply={(mode) => {
+              setScoreEntry(mode);
+              return true;
+            }}
+          />
           <button
             className="cta"
             disabled={name.trim() === ''}
@@ -784,6 +803,8 @@ function AppBody({ initialAppearance }: { initialAppearance: Appearance }) {
                   courtCount,
                   ...(courtCount === 1 ? { allowSingleCourt: true } : {}),
                   ...(teamUp !== 'balanced' ? { teamUp } : {}),
+                  // Rally scoring is the default, so only the other modes are stored
+                  ...(scoreEntry !== DEFAULT_SCORE_ENTRY ? { scoreEntry } : {}),
                 }),
               );
               if (created) {

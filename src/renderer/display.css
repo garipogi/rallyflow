@@ -135,3 +135,16 @@ body.display-body { margin: 0; background: var(--bg, Canvas); color: var(--text,
 .ceremony-cards .award-winner { margin-top: 0.8vh; }
 .ceremony .confetti .bit { width: 1.2vh; height: 2vh; }
 .ceremony .confetti .bit.round { width: 1.3vh; height: 1.3vh; }
+
+/* Final score only / Winner only: teams and a game clock instead of live score digits. */
+.court.quick .teams { grid-template-columns: minmax(0, 1fr); grid-template-rows: 1fr auto 1fr; align-items: stretch; }
+.team.no-score { display: flex; align-items: center; justify-content: center; padding: 3vh 0.8vw; background: var(--surface-2); }
+.team.no-score { min-width: 0; overflow: hidden; }
+.team.no-score .team-names { font-size: 4.4vh; font-weight: 800; gap: 1vh; min-width: 0; max-width: 100%; }
+.team.no-score .player { min-width: 0; max-width: 100%; }
+.team.no-score .player-name { min-width: 0; }
+.team-a.no-score .player-name { color: var(--team-a); }
+.team-b.no-score .player-name { color: var(--team-b); }
+.quick-clock { display: flex; align-items: baseline; justify-content: center; gap: 1.2vw; }
+.quick-clock-label { font-size: 1.8vh; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); }
+.quick-clock-time { font-size: 7vh; line-height: 1; font-weight: 900; font-variant-numeric: tabular-nums; color: var(--text); }

@@ -2,6 +2,7 @@ import type { Gender, PoolName, QueueEntry, Recommendation, RecommendationResult
 import type { PlayerDetails, PlayerDetailsPatch } from '../data/profiles';
 import type { RoundRobinStatus } from '../data/rotation';
 import type { GameState, ScoreLog, ScoringEvent, TeamId } from '../core/scoring';
+import type { ScoreEntryMode } from '../core/scoring/quickResult';
 import type { AwardLibrary, AwardsReport, AwardsScope } from '../data/awards';
 import type { AwardLineup, AwardPick, AwardPicks } from '../core/awards/lineup';
 import type { CeremonyState } from './ceremony';
@@ -33,6 +34,8 @@ export interface NewSessionInput {
   allowSingleCourt?: boolean;
   /** D16: the team-up style to start with; absent = Balanced (D14). */
   teamUp?: TeamUpStyle;
+  /** How results are entered on the court cards; absent = rally scoring. */
+  scoreEntry?: ScoreEntryMode;
 }
 
 /** D15: pass `allowSingleCourt: true` to resize a session down to 1 court. */
@@ -108,6 +111,11 @@ export interface OrganizerApi {
   /** Finishes an in-progress game in one step by tagging the winner, optionally with the final score. */
   recordGameResult(gameId: string, input: GameResultInput): Promise<ApiResult<Game>>;
   reopenGame(gameId: string, confirm: boolean, reason?: string): Promise<ApiResult<Game>>;
+  /**
+   * Takes back a result just recorded (the Undo of the result toast / "Last result" line): reopens the
+   * game through reopenGame (audited) and puts the court back in play. `confirm` must be true.
+   */
+  undoGameResult(gameId: string, confirm: boolean): Promise<ApiResult<Game>>;
   getRotationSettings(sessionId: string): Promise<ApiResult<RotationSettings>>;
   setRotationSettings(sessionId: string, patch: Partial<RotationSettings>): Promise<ApiResult<RotationSettings>>;
   getQueue(sessionId: string): Promise<ApiResult<QueueEntry[]>>;
@@ -188,6 +196,8 @@ export interface DisplayPayload {
   sessionName: string | null;
   model: DisplayModel | null;
   courtExtras?: Record<string, DisplayCourtExtra>;
+  /** The session's scoring mode; winner-only and final-score sessions show teams and a clock, not 0-0. */
+  scoreEntry?: ScoreEntryMode;
   /** Present when the organizer put the awards ceremony on the display. */
   awards?: AwardsReport;
   /** Present while the one-award-at-a-time ceremony runs on the display. */
@@ -249,6 +259,7 @@ export const API_METHODS: readonly ApiMethod[] = [
   'finalizeGame',
   'recordGameResult',
   'reopenGame',
+  'undoGameResult',
   'getRotationSettings',
   'setRotationSettings',
   'getQueue',

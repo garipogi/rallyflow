@@ -34,6 +34,8 @@ import {
   type TemplateInput,
 } from '../core/awards/templates';
 import type { ScoreLog } from '../core/scoring';
+import { scoreEntryOf, type ScoreEntryMode } from '../core/scoring/quickResult';
+import { getRotationSettings } from './rotation';
 
 /**
  * Database-backed awards. Read-only and recomputed from the stored games on every call, so
@@ -60,11 +62,20 @@ export interface AwardsReport extends AwardsResult {
   firstTimers: string[];
   /** The club or group name (and tagline) shown on the ceremony; name '' when not set. */
   club: ClubBranding;
+  /** Session scope: how results were entered (point awards need scores); null for all time. */
+  scoreEntry: ScoreEntryMode | null;
 }
 
 export interface AwardLibrary {
   entries: LibraryEntry[];
   recommendations: Recommendation[];
+  /** Session scope: the session's scoring mode (Winner only ranks no-score awards first); null for all time. */
+  scoreEntry: ScoreEntryMode | null;
+}
+
+/** The scoring mode of the scope's session, or null for all time. */
+function scopeScoreEntry(db: Db, scope: AwardsScope): ScoreEntryMode | null {
+  return scope.kind === 'session' ? scoreEntryOf(getRotationSettings(db, scope.sessionId)) : null;
 }
 
 const LINEUP_KEY = 'awards_lineup';
@@ -257,6 +268,7 @@ export function getAwards(db: Db, scope: AwardsScope): AwardsReport {
     roster: data.roster,
     firstTimers: data.firstTimers,
     club: getClubBranding(db, data.sessionId),
+    scoreEntry: scopeScoreEntry(db, scope),
   };
 }
 
@@ -266,7 +278,12 @@ export function getAwardLibrary(db: Db, scope: AwardsScope): AwardLibrary {
   const data = scopeData(db, scope, nameOf);
   const ctx = buildTemplateContext(templateInput(db, scope, data, nameOf));
   const inLineup = new Set(getAwardLineup(db).entries.filter((e) => e.kind === 'template').map((e) => e.id));
-  return { entries: describeLibrary(ctx), recommendations: ctx.finalized.length > 0 ? recommendTemplates(ctx, inLineup) : [] };
+  const scoreEntry = scopeScoreEntry(db, scope);
+  return {
+    entries: describeLibrary(ctx),
+    recommendations: ctx.finalized.length > 0 ? recommendTemplates(ctx, inLineup, 6, { preferScoreless: scoreEntry === 'winner_only' }) : [],
+    scoreEntry,
+  };
 }
 
 export { defaultLineup };

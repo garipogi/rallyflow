@@ -252,7 +252,7 @@ describe('Fun and Community templates', () => {
     expect(r?.stat).toBe('29');
   });
 
-  it('Speed Demon is the quickest win of at least a minute, credited to the winning side', () => {
+  it('Speed Master (id speed_demon) is the quickest win of at least a minute, credited to the winning side', () => {
     const timed = [
       game(['a', 'b'], ['c', 'd'], 'A', [11, 5], { startedAt: at(0), endedAt: at(10) }),
       game(['e', 'f'], ['g', 'h'], 'B', [9, 11], { startedAt: at(10), endedAt: at(35) }),

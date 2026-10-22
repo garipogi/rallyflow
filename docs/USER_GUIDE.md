@@ -6,7 +6,7 @@ This guide walks one organizer through a full open-play night. RallyFlow works c
 
 ## 1. Start or resume a session
 
-On the first screen type a **Session name** (for example "Thursday Open Play"), choose how many **Courts** you have (1 to 4; pick **1 court (small group)** for a small group on a single court), choose a **Team-up style** (see below; Balanced is the default) and press **Start session**. You can change the number of courts later with **Number of courts** above the court board. If the app was closed unexpectedly, a yellow banner offers **Resume** for the unfinished session; everything up to your last action is restored.
+On the first screen type a **Session name** (for example "Thursday Open Play"), choose how many **Courts** you have (1 to 4; pick **1 court (small group)** for a small group on a single court), choose a **Team-up style** (see below; Balanced is the default), choose a **Scoring mode** (see section 4; Rally scoring is the default) and press **Start session**. You can change the number of courts later with **Number of courts** above the court board. If the app was closed unexpectedly, a yellow banner offers **Resume** for the unfinished session; everything up to your last action is restored.
 
 Past sessions are listed below. Open one to review it. A finished session is read-only until you press **Reopen for corrections**.
 
@@ -100,7 +100,7 @@ Winners play winners and losers play losers, with partners split up every game.
 - One court: the two winners split up and each partners a loser.
 
 *Best for:* Competitive groups of 8 or more on 2 or more courts that finish games together.  
-*What you need:* 2 or more courts recommended. Tag each result (Team A won / Team B won).  
+*What you need:* 2 or more courts recommended. Tag each result (the winner buttons, or Finalize game).  
 *Fairness:* Everyone gets the same number of games (within one): fewest games first, then the longest wait. The style only decides who partners whom.  
 *Example:* Ana & Ben won on Court 1 and Cy & Dee on Court 2: next it is Ana & Cy vs Ben & Dee, while Eve, Fay, Gus and Hal (the losers) play each other.
 
@@ -212,7 +212,7 @@ Winners hold the challenge court and face new challengers, up to a limit, then s
 - The other courts rotate normally; a holder who is resting or declines breaks up the team.
 
 *Best for:* Competitive groups who enjoy defending a court; any number of courts.  
-*What you need:* Tag each result (Team A won / Team B won).  
+*What you need:* Tag each result (the winner buttons, or Finalize game).  
 *Fairness:* One bounded exception: holders keep playing even with more games, for at most the stay-on limit; everyone else is fewest games first, so the gap stays small.  
 *Example:* Ana & Ben won on Court 1 and stay on (stay 1 of 2) against challengers Cy & Dee.
 
@@ -249,13 +249,41 @@ Declining a turn, resting, unavailable courts, manual override (with a reason, r
 
 ## 4. Scoring and undo
 
+### Scoring mode: how results are entered
+
+Each session has a **Scoring mode**, chosen on the new-session form and changeable any time under **Game settings and manual override** (it applies to the court cards straight away). Choosing a mode opens a short window explaining it, with a small picture of the court card; **Use this mode** applies it, **Cancel** keeps the old one, **ⓘ About** reopens it.
+
+- **🎾 Rally scoring** (default): score every rally as described below. Every award works, including the rally awards.
+- **✍️ Final score only:** type the final score when the game ends; the winner is worked out for you. Points still count, so Point Machine and the close-game awards work.
+- **🏆 Winner only:** one tap on the team that won, no scores at all. Games count for wins, games played and streaks; they are stored 0-0, so point-based awards are skipped.
+
+### Final score only
+
+Each court card shows the two teams **by name** (no Team A / Team B to map), a score box for each, **Quick finish** chips and the two winner buttons side by side.
+
+- **Type the score:** the leading team's box and button light up ("ahead") and **Save result: Tofu & Tabi 11–7** names the winner and the score. Press it, or press **Enter**.
+- **Or tap a quick finish and the team that won, in either order.** The chips follow the session's target: 11–9, 11–7, 11–5, 11–3 for games to 11 (15–13 … for 15, 21–19 … for 21). Tapping the other team flips the score to them.
+- A tie or an unreadable score shows a short message under the boxes instead of an error. A score that is not a finished game under the session's target and win-by (for example 11–10 at win-by-2, or 9–7 in a game to 11) shows a gentle note and the button changes to **Save anyway: …**, because short or timed games are fine.
+- Forgot the score? Tap the team that won, then **Save without a score**.
+- Keys while you are in the card: **A** or **B** picks the team that won, **Enter** saves.
+
+### Winner only
+
+Each court card shows two big buttons, **🏆 Tofu & Tabi won** and **🏆 Jake & Yumi won**, in the team colours. One tap saves the result (keys **A** / **B** work too). The timer stays on the card.
+
+### Undo a result
+
+After every quick result a message appears for about ten seconds with **Undo**. The free court card also keeps a small **Last result: … · Undo** line until the next game starts there. Undo reopens the game (it is recorded in the session's audit history) and puts the court back exactly as it was: the same players, the game clock still running, the rally score if rally scoring had started. Undo is refused once the court or one of its players is already in a new game.
+
+### Rally scoring
+
 When a game is on a court, choose the **First serving team** and press **Start scoring**. Then press **Team A wins rally** or **Team B wins rally** after each rally. One click, tap or Enter/Space press records exactly one rally and you stay on the same screen. The app applies side-out scoring: only the serving team scores, and it shows the server and the called score such as 0-0-2.
 
 - **Undo last point** reverses the most recent entry; press it repeatedly to go further back.
 - **Fault by Team A/B** records a fault against that team.
 - When a team reaches the target and leads by the required margin, the game shows the winner. Press **Finalize game** to save the result; the players return to the queue and the court frees up.
 
-**Just record the result.** If nobody keeps score rally by rally, each court card also has **Team A won** and **Team B won** buttons. Optionally type the **Final score A** and **Final score B** first (the winner must have the higher score). One press ends the game: the result is saved, the players return to the queue as of that moment, and the court frees up. Wins and losses count in the leaderboards; points only count if you entered the final score, otherwise the game counts as 0-0 for points. This also works after rally scoring has started: the result you tag replaces the rally score.
+**Skip scoring — just record the result.** If a game was not scored rally by rally, open this section at the bottom of the court card: the optional final score boxes sit on one row and the two winner buttons (with the team names) side by side below. One press ends the game: the result is saved, the players return to the queue as of that moment, and the court frees up. Wins and losses count in the leaderboards; points only count if you entered the final score, otherwise the game counts as 0-0 for points. This also works after rally scoring has started: the result you tag replaces the rally score. Undo is offered as above.
 
 ## 5. The optional timer
 
@@ -263,7 +291,7 @@ Each active game has a timer. Enter a **Timer length (minutes)** (fractions such
 
 ## 6. The display window
 
-Press **Open display** in the session room to open a second window meant for a large screen or projector. It shows every court with player names, big scores and who is serving, plus the **Next up** queue. It updates by itself within a second or two and has no buttons or controls, so nobody can change anything from it. Drag it to the second screen and use the system full-screen shortcut. Pressing **Open display** again just brings the same window forward.
+Press **Open display** in the session room to open a second window meant for a large screen or projector. It shows every court with player names, big scores and who is serving, plus the **Next up** queue. In **Final score only** and **Winner only** sessions nobody keeps a live score, so each court shows the two teams and how long the game has been playing instead of 0-0. It updates by itself within a second or two and has no buttons or controls, so nobody can change anything from it. Drag it to the second screen and use the system full-screen shortcut. Pressing **Open display** again just brings the same window forward.
 
 ## Appearance: light, dark and colour themes
 
@@ -302,7 +330,7 @@ Press **Awards** (the trophy button) on the first screen, next to **Reports and 
   - **Iron Player**: played the most games (hidden when everyone played the same number).
   - **Social Butterfly**: teamed up with the most different partners (at least 3).
   - **Rising Star** (all time only): the biggest jump in win rate in a player's latest session compared with their earlier games.
-- Only finalized games count. A game finished with **Team A won** / **Team B won** without a final score counts for wins, games played and streaks, but never for Point Machine or Clutch Player. Players still level after the award's own number, then win %, wins and point difference share the award.
+- Only finalized games count. A game finished with a winner button (for example in a **Winner only** session) without a final score counts for wins, games played and streaks, but never for Point Machine or Clutch Player. In a **Winner only** session the Awards page and the award library show a small note that point-based awards are unavailable (Point Machine needs final scores; switch to **Final score only** to enable it), and the library's recommendations put awards that work without scores first. Players still level after the award's own number, then win %, wins and point difference share the award.
 - **Show on display** puts the awards ceremony (podium and cards, sized for across the room) on the display window, and opens that window if needed. **Show courts on display** switches it back. Pressing **Open display** in a session also goes back to the courts. The display still has no controls.
 - **Save as image** saves the ceremony as a 1920x1080 PNG (`RallyFlow-awards-<session>-<date>.png`) wherever you choose. **Print certificates** saves a PDF (`RallyFlow-certificates-<date>.pdf`) with one landscape certificate per award winner, ready to print.
 - **Celebrate** plays the confetti again. If your computer is set to reduce motion, there is no animation or confetti.
@@ -345,7 +373,7 @@ Computed awards (worked out from finalized games; results without a score never 
 - **Performance:** Shutout King (most wins where the other side scored 0), Undefeated (won every game; minimum games, default 3), Giant Killer (beat the leaderboard leader most often), Steady Hands (steadiest point margin; minimum scored games, default 3), Bounce-Back (most wins straight after a loss), Serve Machine (most points won on their own serve), Side-Out Specialist (most return rallies that took the serve back).
 - **Partnership:** Iron Partners (pair with the most games together), Lucky Charm (partners win more often with them than without; minimum doubles games, default 3), The Mixer (most different opponents; minimum 4).
 - **Grit & Drama:** Comeback Kid (won after trailing; minimum deficit, default 5), On a Roll (longest run of unanswered points, at least 4), The Closer (served the game-winning point most often), Nail-Biter (most games decided by 2 points or fewer), Marathon Match (all four players of the longest game, by rallies or by time).
-- **Fun:** Rally Rhythm (most rallies played), Speed Demon (quickest win of at least a minute), Last One Standing (played in the final game; session only).
+- **Fun:** Rally Rhythm (most rallies played), Speed Master (quickest win of at least a minute; called Speed Demon before 1.2.0 — a lineup that still had the old default name picks up the new one, a name you chose yourself is kept), Last One Standing (played in the final game; session only).
 - **Community:** Early Bird (first to check in; session only).
 
 Serve Machine, Side-Out Specialist, Comeback Kid, On a Roll, The Closer and Rally Rhythm need games scored rally by rally (**Start scoring**); a game finished with just the result does not count for them.

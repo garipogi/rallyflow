@@ -29,6 +29,7 @@ import {
   type RotationSettings,
   type RoundRobinSchedule,
 } from '../core/rotation';
+import { isScoreEntryMode, SCORE_ENTRY_MODES } from '../core/scoring/quickResult';
 import { listPlayerProfiles } from './profiles';
 import type { Db } from './db';
 import { withTransaction } from './db';
@@ -104,6 +105,9 @@ function validateSettings(settings: RotationSettings): void {
   if (settings.pools !== undefined) validatePools(settings.pools);
   if (settings.challenge !== undefined) validateChallenge(settings.challenge);
   if (settings.roundRobin !== undefined) validateRoundRobin(settings.roundRobin);
+  if (settings.scoreEntry !== undefined && !isScoreEntryMode(settings.scoreEntry)) {
+    throw new ValidationError(`Unknown scoring mode: ${String(settings.scoreEntry)}. Choose ${SCORE_ENTRY_MODES.join(', ')}.`);
+  }
   try {
     assertValidDeclinePolicy(settings.declinePolicy);
   } catch (err) {

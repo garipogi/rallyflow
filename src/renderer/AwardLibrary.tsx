@@ -6,6 +6,25 @@ import { CATEGORY_ACCENT } from './AwardsCeremony';
 
 const CATEGORY_LABEL = new Map(AWARD_CATEGORIES.map((c) => [c.id, c.label]));
 
+/**
+ * A subtle note for sessions scored with Winner only: their games have no score, so the point-based
+ * awards cannot find a winner.
+ */
+export function ScorelessNote({ where }: { where: 'awards' | 'library' }) {
+  return (
+    <p className="scoreless-note" role="note">
+      <span className="scoreless-icon" aria-hidden="true">
+        ℹ️
+      </span>
+      <span>
+        This session used <strong>Winner only</strong>, so awards that need scores are unavailable. Point Machine needs final scores — switch to{' '}
+        <strong>Final score only</strong> (Game settings) to enable it.
+        {where === 'library' ? ' The recommendations below favour awards that work without scores.' : ''}
+      </span>
+    </p>
+  );
+}
+
 function Preview({ entry }: { entry: LibraryEntry }) {
   if (entry.kind === 'manual') return <p className="lib-preview manual">You pick the winner from the roster.</p>;
   if (entry.unavailable) return <p className="lib-preview missing">{entry.unavailable}</p>;
@@ -65,6 +84,8 @@ export function AwardLibrary({
           {entries.length} awards to add. Computed awards find their winner from the games; host picks (people&rsquo;s choice) are chosen by you.
         </p>
       </div>
+
+      {library?.scoreEntry === 'winner_only' ? <ScorelessNote where="library" /> : null}
 
       {library && library.recommendations.length > 0 ? (
         <div className="recs" aria-labelledby="recs-heading">

@@ -15,6 +15,17 @@ All notable changes to RallyFlow are listed here. Versions follow [Semantic Vers
 - **✏️ Club name:** set your club or group name (and an optional tagline) on the Awards page or under Appearance, with an optional name for one session only. It leads the ceremony welcome card, every title card header, the finale and wrap-up, the awards board on the display, the saved image, the Awards page banner and the certificates ("Presented by …"). Empty falls back to the session name and RallyFlow.
 - Fixed: the podium could show only 1st and 3rd. After a tie for first (official ranks 1, 1, 3) the silver step was left empty and hidden. The podium now always draws gold, silver and bronze: tied players share a step ("Tied for 1st") and the next players fill the next steps, with a small "Rank N" label when the official rank differs. Same on the ceremony finale, the awards board, the saved image and the Awards page.
 
+### Scoring modes and quick results
+- **Scoring mode** per session (new-session form and Game settings, with a short explanation window): **Rally scoring** (unchanged default), **Final score only** (type the final score, the winner is worked out) and **Winner only** (one tap on the team that won). Stored in the session settings; sessions without it keep rally scoring.
+- **Quick-result court card** in Final score only / Winner only sessions: no serving/rally controls (the timer stays), two big team-coloured buttons labelled with the actual team names ("🏆 Tofu & Tabi won"), side by side.
+- **Smart score entry:** the leading team lights up as you type and **Save result: Tofu & Tabi 11–7** names the winner; ties and unreadable scores get a friendly inline message; scores that are not a finished game under the session's target / win-by (e.g. 11–10 at win-by-2) show a gentle note and **Save anyway**. **Quick finish** chips (11–9, 11–7, 11–5, 11–3, or for 15/21) work with the winner buttons in either order. Keys: A / B pick the team, Enter saves.
+- **Undo** after every quick result: a ten-second message with Undo, and a **Last result: … · Undo** line on the free court until the next game starts. Undo reopens the game through the audited reopen path and puts the court back as it was (refused once the court or a player is in a newer game).
+- Rally-scoring sessions keep the escape hatch, tidied into a collapsible **Skip scoring — just record the result** section.
+- Fixed: on the court card the "Team B won" button could wrap onto its own line. The final scores now share one row and the two winner buttons always share the next row at equal width, at every court-card width and in every theme.
+- The display shows the teams and a game clock instead of 0–0 in Final score only / Winner only sessions.
+- Awards: in Winner only sessions the Awards page and library note that point-based awards need final scores, and recommendations favour awards that work without scores.
+- Award **Speed Demon** is now **Speed Master** (same award; saved lineups that still used the old default name pick up the new one, custom names are kept).
+
 ## 1.1.1
 
 - Fixed: on Apple-silicon Macs a downloaded copy could be refused as "damaged". Mac builds are now ad-hoc signed (free, no Apple account), so macOS shows the normal first-open prompt.

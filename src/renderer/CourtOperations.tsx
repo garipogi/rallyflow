@@ -22,6 +22,8 @@ import type { Court, Game, Player, RosterEntry } from '../data/types';
 import { Avatar } from './ui/Avatar';
 import { useToast } from './ui/Toasts';
 import { TeamUpPicker, type GuideContext, type RosterFix } from './TeamUpPicker';
+import { ScoringModePicker } from './ScoringModePicker';
+import { scoreEntryGuide, scoreEntryOf, type ScoreEntryMode } from '../core/scoring/quickResult';
 import { RoundRobinPanel } from './RoundRobin';
 
 interface Props {
@@ -280,6 +282,16 @@ export function CourtOperations({ sessionId, sessionName, courts, roster, games,
     await changed();
     return true;
   };
+  const scoreEntry: ScoreEntryMode = scoreEntryOf(settings);
+  /** Applies a confirmed scoring mode; the court cards switch straight away. */
+  const applyScoreEntry = async (mode: ScoreEntryMode): Promise<boolean> => {
+    const saved = await unwrap(window.openPlay.setRotationSettings(sessionId, { scoreEntry: mode }));
+    if (!saved) return false;
+    const g = scoreEntryGuide(mode);
+    notify(`Scoring mode: ${g.label}.`, { icon: g.icon });
+    await changed();
+    return true;
+  };
   const override = async () => {
     const half = needed / 2;
     const ok = await unwrap(
@@ -408,6 +420,8 @@ export function CourtOperations({ sessionId, sessionName, courts, roster, games,
             {guide.hint}
             {grouping ? ` ${guide.fairness}` : ''}
           </p>
+          <ScoringModePicker value={scoreEntry} disabled={readOnly} onApply={applyScoreEntry} />
+          <p className="hint">{scoreEntryGuide(scoreEntry).summary}</p>
           {style === 'fixed_partners' ? (
             <div className="fixed-pairs">
               <strong>Locked pairs</strong>

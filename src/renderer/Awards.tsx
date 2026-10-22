@@ -5,7 +5,7 @@ import type { Session } from '../data/types';
 import { BUILTIN_INFO, BUILTIN_ORDER, type AwardLineup, type AwardPick, type ShowAward } from '../core/awards/lineup';
 import { AwardCard, ChampionBanner, Confetti, Podium } from './AwardsCeremony';
 import { AwardsEditor } from './AwardsEditor';
-import { AwardLibrary } from './AwardLibrary';
+import { AwardLibrary, ScorelessNote } from './AwardLibrary';
 import { CeremonyHost } from './CeremonyHost';
 import { CeremonySound } from './ceremonyAudio';
 import { BRAND } from '../shared/brand';
@@ -58,8 +58,8 @@ function EmptyState({ scopeKind }: { scopeKind: ScopeKind }) {
       <h3>No awards yet</h3>
       <p>
         Awards are earned from finalized games{scopeKind === 'session' ? ' in this session' : ''}. Finish a game with{' '}
-        <strong>Finalize game</strong>, or press <strong>Team A won</strong> / <strong>Team B won</strong>, and the trophies appear
-        here straight away.
+        <strong>Finalize game</strong>, or tap the winning team&rsquo;s <strong>🏆 … won</strong> button, and the trophies appear here
+        straight away.
       </p>
       <p className="hint">Enter the final score when you can: points decide Point Machine and Clutch Player.</p>
     </div>
@@ -306,6 +306,8 @@ export function Awards({
           {notice}
         </p>
       ) : null}
+
+      {report?.scoreEntry === 'winner_only' ? <ScorelessNote where="awards" /> : null}
 
       <div id="awards-panel">
         {panel === 'edit' && lineup ? (

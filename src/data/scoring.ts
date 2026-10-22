@@ -271,3 +271,40 @@ export function reopenGame(db: Db, gameId: string, opts: { confirm?: boolean; re
     return getGame(db, gameId) as Game;
   });
 }
+
+/**
+ * Undo of a result the organizer just recorded (the Undo button of the result toast and of the
+ * court card's "Last result" line). It goes through reopenGame, so it needs the same explicit
+ * confirmation and is audited the same way ('game_reopened', reason "Undo result"), plus a
+ * 'game_result_undone' entry with the result that was taken back. The court goes back to how it
+ * was: the game is in progress again, with the rally score when rally scoring had started, else 0-0.
+ * Refused when the court or one of the players is already in a newer game.
+ */
+export function undoGameResult(db: Db, gameId: string, opts: { confirm?: boolean } = {}): Game {
+  return withTransaction(db, () => {
+    const game = guardGame(db, gameId);
+    if (opts.confirm !== true) throw new ConfirmationRequiredError('Undoing a result needs explicit confirmation ({ confirm: true }).');
+    if (game.status !== 'completed') throw new SessionStateError('Only a completed game can be undone.');
+    const sqlite = raw(db);
+    const busyCourt = sqlite
+      .prepare("SELECT 1 FROM games WHERE court_id = ? AND id <> ? AND status IN ('scheduled', 'in_progress') LIMIT 1")
+      .get(game.courtId, gameId);
+    if (busyCourt) throw new SessionStateError('This court already has a new game, so the result can no longer be undone.');
+    const players = game.participants.map((p) => p.playerId);
+    const busyPlayer = sqlite
+      .prepare(
+        `SELECT 1 FROM game_participants gp JOIN games g ON g.id = gp.game_id
+         WHERE g.session_id = ? AND g.id <> ? AND g.status IN ('scheduled', 'in_progress')
+           AND gp.player_id IN (${players.map(() => '?').join(', ')}) LIMIT 1`,
+      )
+      .get(game.sessionId, gameId, ...players);
+    if (busyPlayer) throw new SessionStateError('A player from this game is already in a new game, so the result can no longer be undone.');
+    const undone = { winner: game.winner, scoreA: game.teamAScore, scoreB: game.teamBScore, endedAt: game.endedAt };
+    reopenGame(db, gameId, { confirm: true, reason: 'Undo result' });
+    const log = foldJournal(db, gameId, listScoreEvents(db, gameId));
+    const score = log ? stateOf(log).score : { A: 0, B: 0 };
+    sqlite.prepare('UPDATE games SET team_a_score = ?, team_b_score = ? WHERE id = ?').run(score.A, score.B, gameId);
+    recordAudit(db, game.sessionId, 'game_result_undone', { gameId, undone, restoredScore: score });
+    return getGame(db, gameId) as Game;
+  });
+}

@@ -18,6 +18,9 @@ import { Confetti } from './AwardsCeremony';
 import { Avatar } from './ui/Avatar';
 import { IdleCourt } from './ui/Logo';
 import { COURT_CHOICES } from './teamUpOptions';
+import { isQuickMode, scoreLine, type GameRules, type ScoreEntryMode } from '../core/scoring/quickResult';
+import { useToast } from './ui/Toasts';
+import { markQuickResult, QuickResultCard, SkipScoring, type RecordResult } from './QuickResult';
 
 /** Re-renders the caller every `ms` while mounted. */
 function useNow(ms: number): number {
@@ -41,26 +44,66 @@ function Elapsed({ startedAt }: { startedAt: string | null }) {
 }
 
 const CELEBRATE_MS = 9000;
+/** How long the result toast (with Undo) stays. */
+const UNDO_TOAST_MS = 10_000;
 
-/** A short celebration on a court that just finished a game. */
-function RecentWin({ game, nameOf }: { game: Game; nameOf: (id: string) => string }) {
-  const now = useNow(1000);
-  const endedAt = game.endedAt ? Date.parse(game.endedAt) : 0;
-  if (!game.winner || now - endedAt > CELEBRATE_MS) return null;
-  const winners = game.participants
+type Notify = ReturnType<typeof useToast>;
+
+/** Undo of a just-recorded result: reopens the game (audited in the data layer) and frees nothing else. */
+async function undoResult(gameId: string, courtLabel: string, notify: Notify, onChanged: () => void): Promise<void> {
+  const res = await window.openPlay.undoGameResult(gameId, true);
+  if (res.ok) notify(`Result undone: ${courtLabel} is back in play.`, { tone: 'info', icon: '↩️' });
+  else notify(res.error, { tone: 'info', icon: '⚠️' });
+  onChanged();
+}
+
+const winnersOf = (game: Game, nameOf: (id: string) => string): string =>
+  game.participants
     .filter((p) => p.team === game.winner)
     .map((p) => nameOf(p.playerId))
     .join(' & ');
+
+/** "won 11-7", or just "won" for a score-less (winner only) result. */
+const wonText = (game: Game): string => {
+  if (game.teamAScore === 0 && game.teamBScore === 0) return 'won';
+  const high = Math.max(game.teamAScore, game.teamBScore);
+  const low = Math.min(game.teamAScore, game.teamBScore);
+  return `won ${scoreLine(high, low)}`;
+};
+
+/**
+ * The court's last result, until the next game starts there: a short celebration first, then a
+ * compact "Last result: … · Undo" line. Undo reopens the game and puts the court back in play.
+ */
+function LastResult({ game, courtLabel, nameOf, readOnly, onUndo }: { game: Game; courtLabel: string; nameOf: (id: string) => string; readOnly: boolean; onUndo: () => void }) {
+  const now = useNow(1000);
+  const endedAt = game.endedAt ? Date.parse(game.endedAt) : 0;
+  if (!game.winner) return null;
+  const celebrating = now - endedAt <= CELEBRATE_MS;
+  const undo = readOnly ? null : (
+    <button className="link-btn undo-btn" aria-label={`Undo last result on ${courtLabel}`} onClick={onUndo}>
+      Undo
+    </button>
+  );
+  if (celebrating) {
+    return (
+      <div className="recent-win">
+        <Confetti burst={endedAt % 100000 || 1} pieces={36} />
+        <span className="recent-win-icon" aria-hidden="true">
+          🏆
+        </span>
+        <span className="recent-win-text">
+          <strong>{winnersOf(game, nameOf)}</strong> {wonText(game)}
+        </span>
+        {undo}
+      </div>
+    );
+  }
   return (
-    <div className="recent-win">
-      <Confetti burst={endedAt % 100000 || 1} pieces={36} />
-      <span className="recent-win-icon" aria-hidden="true">
-        🏆
-      </span>
-      <span>
-        <strong>{winners}</strong> won {game.teamAScore}-{game.teamBScore}
-      </span>
-    </div>
+    <p className="last-result-line">
+      <span className="muted">Last result:</span> <strong>{winnersOf(game, nameOf)}</strong> {wonText(game)}
+      {undo ? <> · {undo}</> : null}
+    </p>
   );
 }
 
@@ -71,6 +114,10 @@ interface BoardProps {
   games: Game[];
   readOnly: boolean;
   courtCount: number;
+  /** How results are entered on the court cards (the session's scoring mode). */
+  scoreEntry: ScoreEntryMode;
+  /** The session's target score and win-by, for the quick-result hints and chips. */
+  rules: GameRules;
   onChanged: () => void;
 }
 
@@ -177,69 +224,20 @@ function GameTimer({ gameId, disabled }: { gameId: string; disabled: boolean }) 
   );
 }
 
-/**
- * Finish a game in one step by tagging the winner, for when nobody keeps score rally by rally.
- * The final score is optional; without it the game counts as 0-0 for points.
- */
-function QuickResult({ disabled, onRecord }: { disabled: boolean; onRecord: (winner: TeamId, scoreA?: number, scoreB?: number) => void }) {
-  const [scoreA, setScoreA] = useState('');
-  const [scoreB, setScoreB] = useState('');
-  const [message, setMessage] = useState<string | null>(null);
-
-  const record = (winner: TeamId) => {
-    const a = scoreA.trim();
-    const b = scoreB.trim();
-    if (a === '' && b === '') {
-      setMessage(null);
-      onRecord(winner);
-      return;
-    }
-    if (a === '' || b === '') {
-      setMessage('Enter both final scores, or leave both empty.');
-      return;
-    }
-    setMessage(null);
-    onRecord(winner, Number(a), Number(b));
-  };
-
-  return (
-    <div className="quick-result">
-      <strong>Just record the result</strong>
-      <div className="row">
-        <label>
-          Final score A{' '}
-          <input type="number" min="0" step="1" className="score-input" value={scoreA} disabled={disabled} onChange={(e) => setScoreA(e.target.value)} />
-        </label>
-        <label>
-          Final score B{' '}
-          <input type="number" min="0" step="1" className="score-input" value={scoreB} disabled={disabled} onChange={(e) => setScoreB(e.target.value)} />
-        </label>
-        <button className="secondary" disabled={disabled} onClick={() => record('A')}>
-          Team A won
-        </button>
-        <button className="secondary" disabled={disabled} onClick={() => record('B')}>
-          Team B won
-        </button>
-      </div>
-      {message ? <span className="error">{message}</span> : null}
-      <span className="hint">
-        Ends the game now, without rally scoring. The final score is optional; if you leave it empty the game counts as 0-0 for
-        points (wins and losses still count).
-      </span>
-    </div>
-  );
-}
-
 interface ScoringProps {
   court: Court;
   game: Game;
   nameOf: (id: string) => string;
   readOnly: boolean;
+  scoreEntry: ScoreEntryMode;
+  rules: GameRules;
   onChanged: () => void;
 }
 
 /** Scoring controls for one court. A rally is one click or one key press; nothing navigates away. */
-function CourtScoring({ court, game, nameOf, readOnly, onChanged }: ScoringProps) {
+function CourtScoring({ court, game, nameOf, readOnly, scoreEntry, rules, onChanged }: ScoringProps) {
+  const notify = useToast();
+  const quick = isQuickMode(scoreEntry);
   const [state, setState] = useState<GameState | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -249,6 +247,10 @@ function CourtScoring({ court, game, nameOf, readOnly, onChanged }: ScoringProps
 
   useEffect(() => {
     let alive = true;
+    if (quick) {
+      setLoaded(true);
+      return undefined;
+    }
     void (async () => {
       const res = await window.openPlay.loadScoreLog(game.id);
       if (!alive) return;
@@ -258,7 +260,7 @@ function CourtScoring({ court, game, nameOf, readOnly, onChanged }: ScoringProps
     return () => {
       alive = false;
     };
-  }, [game.id]);
+  }, [game.id, quick]);
 
   const apply = (call: () => Promise<ApiResult<GameState>>, after?: () => void) => {
     chain.current = chain.current.then(async () => {
@@ -301,24 +303,42 @@ function CourtScoring({ court, game, nameOf, readOnly, onChanged }: ScoringProps
     });
   };
 
-  const recordResult = (winner: TeamId, scoreA?: number, scoreB?: number) => {
-    chain.current = chain.current.then(async () => {
-      const res = await window.openPlay.recordGameResult(game.id, { winner, scoreA, scoreB });
-      if (res.ok) {
+  /** A quick result: saved in one step, then a toast with Undo (the court card keeps an Undo line too). */
+  const recordResult: RecordResult = (winner, scoreA, scoreB) =>
+    new Promise((resolve) => {
+      chain.current = chain.current.then(async () => {
+        const res = await window.openPlay.recordGameResult(game.id, { winner, scoreA, scoreB });
+        if (!res.ok) {
+          resolve(res.error);
+          return;
+        }
         setError(null);
+        markQuickResult(game.id);
+        const scored = scoreA !== undefined && scoreB !== undefined;
+        const scorePart = scored ? ` ${scoreLine(Math.max(scoreA, scoreB), Math.min(scoreA, scoreB))}` : '';
+        const gameId = game.id;
+        notify(`${court.label}: ${team(winner)} won${scorePart}`, {
+          tone: 'celebrate',
+          icon: '🏆',
+          durationMs: UNDO_TOAST_MS,
+          action: { label: 'Undo', ariaLabel: `Undo result on ${court.label}`, run: () => void undoResult(gameId, court.label, notify, onChanged) },
+        });
+        resolve(null);
         onChanged();
-      } else {
-        setError(res.error);
-      }
+      });
     });
-  };
 
   const over = state?.isOver ?? false;
   const locked = readOnly || over;
   const gamePoint = state ? gamePointTeam(state) : null;
 
   return (
-    <article className={`court-card active${over ? ' is-over' : ''}`} data-testid="court-scoring" data-court-label={court.label}>
+    <article
+      className={`court-card active${over ? ' is-over' : ''}${quick ? ' quick-mode' : ''}`}
+      data-testid="court-scoring"
+      data-court-label={court.label}
+      data-score-entry={scoreEntry}
+    >
       {over && state?.winner ? <Confetti burst={state.rallies + 1} pieces={48} /> : null}
       <div className="court-title">
         <h4>
@@ -332,7 +352,12 @@ function CourtScoring({ court, game, nameOf, readOnly, onChanged }: ScoringProps
       </div>
       {error ? <p className="error" role="alert">{error}</p> : null}
 
-      {!loaded ? (
+      {quick ? (
+        <>
+          <QuickResultCard mode={scoreEntry === 'winner_only' ? 'winner_only' : 'final_score'} rules={rules} disabled={readOnly} name={team} onRecord={recordResult} />
+          <GameTimer gameId={game.id} disabled={readOnly} />
+        </>
+      ) : !loaded ? (
         <p>Loading score...</p>
       ) : state === null ? (
         <div className="row">
@@ -420,14 +445,15 @@ function CourtScoring({ court, game, nameOf, readOnly, onChanged }: ScoringProps
           <GameTimer gameId={game.id} disabled={readOnly} />
         </>
       )}
-      {loaded ? <QuickResult disabled={readOnly} onRecord={recordResult} /> : null}
+      {loaded && !quick ? <SkipScoring rules={rules} disabled={readOnly} name={team} onRecord={recordResult} /> : null}
     </article>
   );
 }
 
 /** The dashboard: every court with its game and score controls, ahead of everything else. */
-export function CourtBoard({ sessionId, courts, roster, games, readOnly, courtCount, onChanged }: BoardProps) {
+export function CourtBoard({ sessionId, courts, roster, games, readOnly, courtCount, scoreEntry, rules, onChanged }: BoardProps) {
   const [error, setError] = useState<string | null>(null);
+  const notify = useToast();
   const names = new Map(roster.map((e) => [e.playerId, e.player.displayName]));
   const nameOf = (id: string): string => names.get(id) ?? id;
 
@@ -467,7 +493,18 @@ export function CourtBoard({ sessionId, courts, roster, games, readOnly, courtCo
         {courts.map((court) => {
           const game = games.find((g) => g.courtId === court.id && isActive(g));
           if (game) {
-            return <CourtScoring key={`${court.id}:${game.id}`} court={court} game={game} nameOf={nameOf} readOnly={readOnly} onChanged={onChanged} />;
+            return (
+              <CourtScoring
+                key={`${court.id}:${game.id}`}
+                court={court}
+                game={game}
+                nameOf={nameOf}
+                readOnly={readOnly}
+                scoreEntry={scoreEntry}
+                rules={rules}
+                onChanged={onChanged}
+              />
+            );
           }
           const last = games
             .filter((g) => g.courtId === court.id && g.status === 'completed' && g.endedAt !== null)
@@ -481,7 +518,16 @@ export function CourtBoard({ sessionId, courts, roster, games, readOnly, courtCo
                   {court.status === 'available' ? 'Free' : 'Unavailable'}
                 </span>
               </div>
-              {last ? <RecentWin key={last.id} game={last} nameOf={nameOf} /> : null}
+              {last ? (
+                <LastResult
+                  key={last.id}
+                  game={last}
+                  courtLabel={court.label}
+                  nameOf={nameOf}
+                  readOnly={readOnly}
+                  onUndo={() => void undoResult(last.id, court.label, notify, onChanged)}
+                />
+              ) : null}
               {court.status === 'available' ? (
                 <div className="free-court">
                   <IdleCourt />

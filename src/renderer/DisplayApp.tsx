@@ -91,7 +91,36 @@ function useClock(ms: number): number {
   return now;
 }
 
-function Team({ team, id, serving, won, gamePoint }: { team: DisplayTeam; id: 'A' | 'B'; serving: boolean; won: boolean; gamePoint: boolean }) {
+function Team({
+  team,
+  id,
+  serving,
+  won,
+  gamePoint,
+  showScore = true,
+}: {
+  team: DisplayTeam;
+  id: 'A' | 'B';
+  serving: boolean;
+  won: boolean;
+  gamePoint: boolean;
+  /** False in Final score only / Winner only sessions: the teams are shown without 0-0 digits. */
+  showScore?: boolean;
+}) {
+  if (!showScore) {
+    return (
+      <div className={`team team-${id.toLowerCase()} no-score`}>
+        <div className="team-names">
+          {team.players.map((p) => (
+            <span className="player" key={p.playerId}>
+              <Avatar playerId={p.playerId} name={p.name} size="5vh" />
+              <span className="player-name">{p.name}</span>
+            </span>
+          ))}
+        </div>
+      </div>
+    );
+  }
   return (
     <div className={`team team-${id.toLowerCase()}${serving ? ' serving' : ''}${won ? ' won' : ''}${gamePoint ? ' game-point' : ''}`}>
       <div className="team-names">
@@ -126,8 +155,9 @@ function Team({ team, id, serving, won, gamePoint }: { team: DisplayTeam; id: 'A
   );
 }
 
-function Court({ court, extra, now }: { court: DisplayCourt; extra: DisplayCourtExtra | undefined; now: number }) {
+function Court({ court, extra, now, quick }: { court: DisplayCourt; extra: DisplayCourtExtra | undefined; now: number; quick: boolean }) {
   const game = court.game;
+  if (game && quick) return <QuickCourt court={court} extra={extra} now={now} />;
   const attrs: Record<string, string> = {
     'data-testid': 'display-court',
     'data-court-label': court.label,
@@ -169,11 +199,39 @@ function Court({ court, extra, now }: { court: DisplayCourt; extra: DisplayCourt
           {showLast && last ? (
             <p className="last-result">
               <span aria-hidden="true">🏆 </span>
-              {last.names} won {last.scoreA}-{last.scoreB}
+              {last.names} won{last.scoreA === 0 && last.scoreB === 0 ? '' : ` ${Math.max(last.scoreA, last.scoreB)}–${Math.min(last.scoreA, last.scoreB)}`}
             </p>
           ) : null}
         </div>
       )}
+    </section>
+  );
+}
+
+/**
+ * A court in a Final score only / Winner only session: nobody keeps the score live, so the screen
+ * shows the two teams and how long the game has been going instead of 0-0.
+ */
+function QuickCourt({ court, extra, now }: { court: DisplayCourt; extra: DisplayCourtExtra | undefined; now: number }) {
+  const game = court.game;
+  if (!game) return null;
+  return (
+    <section className={`court court-${court.status} quick`} data-testid="display-court" data-court-label={court.label} data-court-status={court.status}>
+      <header className="court-head">
+        <h2>
+          <span className="live-dot" aria-hidden="true" />
+          {court.label}
+        </h2>
+        <span className="court-note">In play</span>
+      </header>
+      <div className="teams quick-teams">
+        <Team team={game.teamA} id="A" serving={false} won={false} gamePoint={false} showScore={false} />
+        <div className="quick-clock" data-testid="display-elapsed">
+          <span className="quick-clock-label">Playing for</span>
+          <span className="quick-clock-time">{formatElapsed(extra?.startedAt ?? null, now)}</span>
+        </div>
+        <Team team={game.teamB} id="B" serving={false} won={false} gamePoint={false} showScore={false} />
+      </div>
     </section>
   );
 }
@@ -230,6 +288,7 @@ export function DisplayApp() {
   const courts = payload?.model?.courts ?? [];
   const queue = payload?.model?.queue ?? [];
   const extras = payload?.courtExtras ?? {};
+  const quick = payload?.scoreEntry === 'final_score' || payload?.scoreEntry === 'winner_only';
   const columns = courts.length <= 1 ? 1 : 2;
   const rows = Math.max(1, Math.ceil(courts.length / columns));
   const inPlay = courts.filter((c) => c.status === 'in_use').length;
@@ -260,7 +319,7 @@ export function DisplayApp() {
         <div className="display-grid">
           <div className="courts" style={{ gridTemplateColumns: `repeat(${columns}, 1fr)`, gridTemplateRows: `repeat(${rows}, 1fr)` }}>
             {courts.map((court) => (
-              <Court key={court.courtId} court={court} extra={extras[court.courtId]} now={now} />
+              <Court key={court.courtId} court={court} extra={extras[court.courtId]} now={now} quick={quick} />
             ))}
           </div>
           <aside className="queue" data-testid="display-queue">

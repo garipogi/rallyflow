@@ -1,5 +1,6 @@
 import { ScoringError } from '../core/scoring';
-import { NEW_SESSION_ROTATION_SETTINGS, settingsForTeamUp, TEAM_UP_STYLES, type TeamUpStyle } from '../core/rotation';
+import { NEW_SESSION_ROTATION_SETTINGS, settingsForTeamUp, TEAM_UP_STYLES, type RotationSettings, type TeamUpStyle } from '../core/rotation';
+import { isScoreEntryMode } from '../core/scoring/quickResult';
 import { withTransaction } from '../data/db';
 import type { Db } from '../data/db';
 import {
@@ -28,6 +29,7 @@ import {
   recordGameResult,
   recordScoringEvent,
   reopenGame,
+  undoGameResult,
   startScoring,
   undoLastScoringEvent,
 } from '../data/scoring';
@@ -189,7 +191,13 @@ function createDbHandlers(db: Db): { [K in SyncHandlerName]: (...args: unknown[]
           if (style !== undefined && !TEAM_UP_STYLES.includes(style as TeamUpStyle)) {
             throw new ValidationError(`Unknown team-up style: ${String(style)}`);
           }
-          const patch = style === undefined ? { ...NEW_SESSION_ROTATION_SETTINGS } : { ...NEW_SESSION_ROTATION_SETTINGS, ...settingsForTeamUp(style) };
+          const patch: Partial<RotationSettings> =
+            style === undefined ? { ...NEW_SESSION_ROTATION_SETTINGS } : { ...NEW_SESSION_ROTATION_SETTINGS, ...settingsForTeamUp(style) };
+          // An optional scoring mode; absent keeps rally scoring (nothing stored)
+          if (typed.scoreEntry !== undefined) {
+            if (!isScoreEntryMode(typed.scoreEntry)) throw new ValidationError(`Unknown scoring mode: ${String(typed.scoreEntry)}`);
+            patch.scoreEntry = typed.scoreEntry;
+          }
           setRotationSettings(db, session.id, patch, { at: session.startedAt });
           return session;
         }),
@@ -252,6 +260,7 @@ function createDbHandlers(db: Db): { [K in SyncHandlerName]: (...args: unknown[]
       run(() => recordGameResult(db, gid as string, input as Parameters<OrganizerApi['recordGameResult']>[1])),
     reopenGame: (gid, confirm, reason) =>
       run(() => reopenGame(db, gid as string, { confirm: confirm === true, reason: typeof reason === 'string' ? reason : undefined })),
+    undoGameResult: (gid, confirm) => run(() => undoGameResult(db, gid as string, { confirm: confirm === true })),
     getRotationSettings: (sid) => run(() => getRotationSettings(db, sid as string)),
     setRotationSettings: (sid, patch) =>
       run(() => setRotationSettings(db, sid as string, patch as Parameters<OrganizerApi['setRotationSettings']>[1])),

@@ -835,7 +835,7 @@ export const AWARD_TEMPLATES: readonly AwardTemplateDef[] = [
     id: 'speed_demon',
     kind: 'computed',
     category: 'fun',
-    title: 'Speed Demon',
+    title: 'Speed Master',
     icon: '🏎️',
     description: 'The quickest win, from the game starting to it ending (games of at least a minute).',
     scopes: ['session', 'historical'],
@@ -1043,8 +1043,23 @@ export function describeLibrary(ctx: TemplateContext): LibraryEntry[] {
  * "Recommended for this session": scores every template that is not in the lineup yet by how
  * interesting it is with this data. Computed templates need a winner; best first, then by title.
  */
-export function recommendTemplates(ctx: TemplateContext, inLineup: ReadonlySet<string>, limit = 6): Recommendation[] {
-  const out: Array<Recommendation & { title: string }> = [];
+export interface RecommendOptions {
+  /**
+   * The session used Winner only (no scores): awards that need final scores or rally scoring are
+   * ranked after every award that works without them.
+   */
+  preferScoreless?: boolean;
+}
+
+/** Whether a template needs final scores or the rally log to find a winner. */
+export function needsScores(template: Pick<AwardTemplateDef, 'needs' | 'needsOneOf'>): boolean {
+  const scoreNeed = (n: DataNeed): boolean => n === 'scores' || n === 'rallyLog';
+  if (template.needs.some(scoreNeed)) return true;
+  return template.needsOneOf !== undefined && template.needsOneOf.length > 0 && template.needsOneOf.every(scoreNeed);
+}
+
+export function recommendTemplates(ctx: TemplateContext, inLineup: ReadonlySet<string>, limit = 6, opts: RecommendOptions = {}): Recommendation[] {
+  const out: Array<Recommendation & { title: string; scored: boolean }> = [];
   for (const t of AWARD_TEMPLATES) {
     if (inLineup.has(t.id)) continue;
     let result: TemplateResult | null = null;
@@ -1054,10 +1069,11 @@ export function recommendTemplates(ctx: TemplateContext, inLineup: ReadonlySet<s
     }
     const interest = t.interest(ctx, result);
     if (!interest) continue;
-    out.push({ templateId: t.id, score: Math.round(interest.score * 10) / 10, reason: interest.reason, title: t.title });
+    out.push({ templateId: t.id, score: Math.round(interest.score * 10) / 10, reason: interest.reason, title: t.title, scored: needsScores(t) });
   }
+  const tier = (r: { scored: boolean }): number => (opts.preferScoreless === true && r.scored ? 1 : 0);
   return out
-    .sort((a, b) => b.score - a.score || byString(a.title, b.title))
+    .sort((a, b) => tier(a) - tier(b) || b.score - a.score || byString(a.title, b.title))
     .slice(0, Math.max(0, limit))
     .map(({ templateId, score, reason }) => ({ templateId, score, reason }));
 }
