@@ -37,16 +37,214 @@ The top of the session room is the court board: each court, its current game and
 
 You can switch at any time; the change applies to the next recommendation.
 
-**Team-up styles (Game settings).** The **Team-up style** list replaces "Who plays next". *Balanced* and *Longest wait* are the two rules above. The other four styles always decide **who** plays with the balanced-games rule (fewest games first, then longest wait), so everyone still gets the same number of games; they change **how** those players are grouped into teams and courts. When several courts are free at once they are filled together. The explanation under each recommended game says what the style did, for example "Paddle stacking: winners Ana & Ben vs winners Cy & Dee".
+**Team-up styles (Game settings and the new-session form).** The **Team-up style** list replaces "Who plays next" and offers twelve styles. *Balanced* and *Longest wait* are the two rules above. In every other style **who** plays is still decided by the balanced-games rule (fewest games first, then longest wait), so everyone gets the same number of games; the style changes **how** those players are grouped into teams and courts. Two styles have a small, documented exception: *Challenge court* (winners stay on, up to the limit you set) and *Round robin* (follows its schedule; byes rotate fairly). *Skill pools* keeps games level within each pool. When several courts are free at once they are filled together, and the explanation under each recommended game says what the style did.
 
-- **Random.** A sit-out wheel: nobody plays a second time until every checked-in, available player has played once in the current cycle. Late arrivals join the current cycle as not yet played, so they get in soon. Teammates and opponents are drawn at random each round (repeatable for the same session and round), avoiding your partner from your last game whenever possible.
-- **Paddle stacking (winners vs winners).** After games finish, winners play winners and losers play losers; partners from the last game are split up (for example the winners of Court 1 and Court 2 are shuffled into two new teams). Waiting players still get in first. Anyone with no result yet, or who sat out last round, counts as neutral and fills in after the losers. When a court mixes results, the winners are put on opposite teams so they face each other. *One court:* the two winners are split up and each partners a loser. Paddle stacking works best when courts finish at about the same time.
-- **Up & Down the River (king of the court).** Court 1 is the top court. Winners move up one court and losers move down one; partners split every round so you play with someone new. Top-court winners stay on the top court. When players are waiting, bottom-court losers are the first to go to the waiting line (among players level on games), and newcomers enter at the bottom court. *One court:* winners stay on (when level on games), partners split, losers rotate out first.
-- **Fixed partners.** Under **Locked pairs** pick a **First partner** and **Second partner** and press **Lock pair** ("Ana + Ben always together"); **Unlock** removes a pair. A locked pair plays as a team and takes turns as a unit; everyone else is paired by the balanced rule. If one partner is resting, playing or declined, the other plays unpaired that turn. If keeping every pair together would make the only unpaired player sit out again with fewer games, one pair is split for that game and the explanation says so. In singles, locked pairs do not apply.
+**The explanation window.** Whenever you pick a style from the list, a window opens first and explains it: a one-line summary, *How it works*, a small diagram, *Best for*, *What you need* (checked against your roster: for example "2 of 14 players have no gender set" with a **Set genders** button that opens Player details, or **Set skill levels**), a *Fairness* note and a short example using your players' names. Press **Use this style** to switch, or **Cancel** (or Esc) to keep the style you had. **ⓘ About this style** next to the list reopens the window for the current style without changing anything. The window works with the keyboard (Tab stays inside it, Esc closes it, focus returns to where you were) and with screen readers.
 
-In the four grouping styles **Balance by skill** and **Rotate partners** are switched off in the list because the style decides the teams. Declining a turn, resting, unavailable courts, manual override and "court stays open" work the same in every style.
+The twelve styles, exactly as the window explains them:
 
-*Coming later (not selectable yet):* Mixed doubles (needs a gender/division field), Skill pools / A–B divisions, Round robin schedule (everyone partners everyone once, printable), Mentor pairing (beginner + advanced), Challenge court (winners stay, max 2 games), Swiss pairing by record.
+#### ⚖️ Balanced
+
+Players with the fewest games go first, so everyone plays the same number of games and partners keep changing.
+
+*How it works:*
+
+- Fewest games played goes first; ties go to the longest wait, then a draw that changes every round.
+- Late arrivals start level with the regulars (a catch-up credit), so they do not play many games in a row.
+- The four chosen players are paired to avoid repeat partners, then repeat opponents.
+
+*Best for:* Any group size; the recommended default for social open play.  
+*What you need:* Nothing extra: works with 1 to 4 courts and any roster.  
+*Fairness:* Everyone gets the same number of games (within one): fewest games first, then the longest wait. The style only decides who partners whom.  
+*Example:* Ana, Ben, Cy and Dee have 2 games and Eve has 3, so Eve waits a turn and the other four play.
+
+#### ⏳ Longest wait
+
+Whoever has waited longest plays next, the classic paddle-rack order.
+
+*How it works:*
+
+- The longest wait goes first.
+- Ties go to whoever checked in earlier.
+- Optional skill balancing and partner rotation (Game settings) adjust the teams, never who plays.
+
+*Best for:* Groups used to a paddle rack who want strict first-come, first-served.  
+*What you need:* Nothing extra.  
+*Fairness:* Fair by waiting time, not by games: with an odd number of waiting players, early arrivals can end the night a game or two ahead.  
+*Example:* Ana has waited 14 min, Ben 12, Cy 9 and Dee 7: those four play next.
+
+#### 🎲 Random
+
+A sit-out wheel decides who plays and teammates and opponents are drawn at random.
+
+*How it works:*
+
+- Nobody plays twice before every checked-in player has played once this cycle.
+- Late arrivals join the current cycle as not played yet, so they get in soon.
+- Teams are a random draw each round that avoids your partner from your last game.
+
+*Best for:* Mixers and casual nights where variety matters more than matchups.  
+*What you need:* Nothing extra.  
+*Fairness:* Everyone gets the same number of games (within one): fewest games first, then the longest wait. The style only decides who partners whom.  
+*Example:* This round's draw: Ana & Cy vs Ben & Dee. Next round is drawn again.
+
+#### 🏆 Paddle stacking
+
+Winners play winners and losers play losers, with partners split up every game.
+
+*How it works:*
+
+- After games finish, the winners are grouped together and so are the losers.
+- Partners from the last game are split, so winners face winners on opposite teams.
+- Players who sat out or have no result yet count as neutral and fill in after the losers.
+- One court: the two winners split up and each partners a loser.
+
+*Best for:* Competitive groups of 8 or more on 2 or more courts that finish games together.  
+*What you need:* 2 or more courts recommended. Tag each result (Team A won / Team B won).  
+*Fairness:* Everyone gets the same number of games (within one): fewest games first, then the longest wait. The style only decides who partners whom.  
+*Example:* Ana & Ben won on Court 1 and Cy & Dee on Court 2: next it is Ana & Cy vs Ben & Dee, while Eve, Fay, Gus and Hal (the losers) play each other.
+
+#### 🌊 Up & Down the River
+
+Winners move up a court and losers move down, so the top court ends up with the hottest players.
+
+*How it works:*
+
+- Court 1 is the top court; winners move up one court, losers down one.
+- Top-court winners stay; newcomers enter at the bottom court.
+- Partners split every round so you play with someone new.
+- When players are waiting, bottom-court losers go to the waiting line first.
+
+*Best for:* Ladder nights with 2 to 4 courts and a competitive crowd.  
+*What you need:* 2 or more courts recommended (1 court: winners stay on). Tag each result.  
+*Fairness:* Everyone gets the same number of games (within one): fewest games first, then the longest wait. The style only decides who partners whom.  
+*Example:* Ana & Ben win on Court 2: both move up to Court 1 with new partners; Cy & Dee lose and move down to Court 3.
+
+#### 🤝 Fixed partners
+
+Locked pairs always play together and take turns as a unit; everyone else rotates.
+
+*How it works:*
+
+- Lock pairs in Game settings (for example a couple or a doubles team).
+- A locked pair plays together and is as due as its later member.
+- Unpaired players are teamed by the balanced rule.
+- If a partner is resting, playing or declined, the other plays unpaired that turn.
+
+*Best for:* Groups with couples or practice partners who want to stay together.  
+*What you need:* Lock at least one pair after choosing this style.  
+*Fairness:* Fewest games first by pair; a pair is split for one game only when keeping it together would make someone with fewer games sit out again.  
+*Example:* Ana + Ben are locked: they play as a team, here against Cy & Dee.
+
+#### 👫 Mixed doubles
+
+Every team is one man and one woman whenever the players due to play allow it.
+
+*How it works:*
+
+- Who plays is still fewest games first, then the longest wait.
+- Each court takes two men and two women while they last, and each team is one of each.
+- To make teams mixed, a player may swap with one of the next two waiting players on the same game count.
+- Short of one gender? Those players team up together and the explanation says so; players with no gender set fill either side.
+
+*Best for:* Mixed groups with a similar number of men and women.  
+*What you need:* Set Male / Female for players in the roster (Edit or Player details).  
+*Fairness:* Everyone gets the same number of games (within one). The only swap allowed is between players on the same game count, so nobody with fewer games is ever skipped.  
+*Example:* Ana (F) & Ben (M) vs Cy (M) & Dee (F): both teams are mixed.
+
+#### 🏅 Skill pools
+
+Players are split into pools (A advanced, B developing, optional C) and each court plays within one pool.
+
+*How it works:*
+
+- Pools come from each player’s pool in the roster, or from skill-level cutoffs you set.
+- Courts belong to a pool (auto: by pool size, pool A on the top courts) or alternate between pools.
+- Within a pool it is fewest games first, then the longest wait.
+- A pool that cannot fill its court leaves it open with a reason, or borrows players if you allow it.
+
+*Best for:* Bigger groups (12+) with clearly different levels and 2 or more courts.  
+*What you need:* Set skill levels (or a pool) for players in the roster. 2 or more courts recommended (1 court: pools take turns).  
+*Fairness:* Games stay level within each pool (fewest games first inside the pool). Pools of different sizes can drift apart; borrowing evens them out.  
+*Example:* Court 1 (pool A): Ana & Ben vs Cy & Dee. Court 2 (pool B): Eve & Fay vs Gus & Hal.
+
+#### 🔄 Round robin
+
+A printable schedule where everyone partners everyone as evenly as possible, round by round.
+
+*How it works:*
+
+- Generate the schedule for the players and courts here; print it or save it as a PDF.
+- Each round lists the games per court and who sits out (byes rotate fairly).
+- Start this game follows the schedule; a missing player is replaced by the most-due waiting player.
+- If the roster changes, regenerate to include new arrivals (the app reminds you).
+
+*Best for:* Leagues, ladders and socials of 5 to 20 players who like a plan they can see.  
+*What you need:* Check players in first, then generate the schedule (Game settings).  
+*Fairness:* Follows the schedule instead of the live queue; byes rotate so scheduled games stay within one of each other. When the schedule ends, games follow the Balanced rule.  
+*Example:* Round 1: Court 1 Ana & Ben vs Cy & Dee; bye: Eve. Round 2 mixes everyone again.
+
+#### 🎓 Mentor pairing
+
+Each team pairs a higher-rated player with a lower-rated one, so newer players learn on court.
+
+*How it works:*
+
+- Who plays is still fewest games first, then the longest wait.
+- Among them, the strongest partners the weakest, the next strongest the next weakest, and so on.
+- Teams with similar combined levels face each other.
+- Players without a skill level count as the middle level and show as unrated.
+
+*Best for:* Clinics, beginner nights and groups welcoming new players.  
+*What you need:* Set skill levels for players in the roster.  
+*Fairness:* Everyone gets the same number of games (within one): fewest games first, then the longest wait. The style only decides who partners whom.  
+*Example:* Mentor Eve (4.5) with Fay (2.0) vs mentor Ana (4.0) with Ben (2.5).
+
+#### 👑 Challenge court
+
+Winners hold the challenge court and face new challengers, up to a limit, then sit.
+
+*How it works:*
+
+- Court 1 is the challenge court (or every court, if you choose).
+- Winners stay on for up to 2 games in a row (1 to 3, your choice), then sit out a turn.
+- Challengers come from the front of the fair queue.
+- The other courts rotate normally; a holder who is resting or declines breaks up the team.
+
+*Best for:* Competitive groups who enjoy defending a court; any number of courts.  
+*What you need:* Tag each result (Team A won / Team B won).  
+*Fairness:* One bounded exception: holders keep playing even with more games, for at most the stay-on limit; everyone else is fewest games first, so the gap stays small.  
+*Example:* Ana & Ben won on Court 1 and stay on (stay 1 of 2) against challengers Cy & Dee.
+
+#### 📊 Swiss pairing
+
+Players with similar records tonight play each other, avoiding rematches.
+
+*How it works:*
+
+- Who plays is still fewest games first, then the longest wait.
+- Those players are ranked by tonight’s record: win %, then point difference.
+- Neighbours in that ranking share a court; a swap between courts avoids a rematch when possible.
+- Players with no results yet count as 0–0 and slot in the middle.
+
+*Best for:* Groups of 8+ who want close, competitive games as the night goes on.  
+*What you need:* Tag results, ideally with the final score for point difference.  
+*Fairness:* Everyone gets the same number of games (within one): fewest games first, then the longest wait. The style only decides who partners whom.  
+*Example:* Swiss: Ana (3–1) & Dee (2–2) vs Ben (3–1) & Cy (2–2).
+
+**Style settings.** Some styles add a small panel under the list:
+
+- *Fixed partners:* under **Locked pairs** pick a **First partner** and **Second partner** and press **Lock pair**; **Unlock** removes a pair. In singles, locked pairs do not apply.
+- *Mixed doubles:* shows how many checked-in players are women, men or not set, with **Set genders**. Players with no gender fill in on either side. If there are not enough of one gender among the players due to play, those players team up together and the explanation says so; a player at the cut may swap with one of the next two waiting players only when both have the same number of games. Singles has no teams, so opponents simply rotate.
+- *Skill pools:* **Pools from** (each player's pool from the roster, else skill level; or skill level only), **Pool A from skill** (default 3.5), **Use a third pool (C)** with **Pool B from skill**, **Courts** (*Auto*: split by how many players each pool has, pool A on the top courts; *Alternate*: the pool whose next player is most due takes each free court; or choose a pool per court) and **When a pool is short** (*Keep its court open*, the default, with the reason shown; or *Borrow players from another pool*, taking the most-due players). Players with neither a pool nor a skill level go in pool B. With 1 court (or fewer courts than pools) the pools take turns.
+- *Round robin:* **Generate schedule** makes it for the checked-in players and the courts that are available (leave **Rounds** empty for one full cycle, or choose 1 to 40). **View and print schedule** shows rounds by court with who sits out, the current round and ✓ for games already started; **Print** or **Save as PDF** gives a clean page. **Start this game** follows the schedule; a free court waits while the current round is still being played, so rounds stay together. A scheduled player who is resting, playing elsewhere or declined is replaced by the most-due waiting player who is not in that round, and the explanation says so; a round that cannot be played at all is skipped. Players who check in after the schedule was made are listed with a reminder to **Regenerate schedule** (the new schedule starts again at round 1). When the schedule is finished, games follow the Balanced rule until you generate another.
+- *Mentor pairing:* shows how many checked-in players have a skill level, with **Set skill levels**. Unrated players count as the middle level (the median of the rated players present). In singles a higher-rated player plays a lower-rated one.
+- *Challenge court:* **Winners stay on for up to** 1, 2 (default) or 3 games in a row, and **Challenge court**: *Court 1 only* (default) or *Every court*. After the limit the winners sit out a turn (they only play if a court would otherwise stay open). If one of the winners is resting or declines, the team does not stay on.
+- *Swiss pairing:* records count tagged results this session (win %, then point difference when you entered the final score). Players with no results are 0–0.
+
+**Player details: skill level, gender and pool.** When adding a player you can enter an optional **Skill** (1 to 8) and **Gender**. **Edit** on a player's row now also changes skill level, gender and pool. **Player details (skill, gender, pool)** above the roster opens a quick table for everyone at once; changes save as you go. These details belong to the player, so they carry over to future sessions.
+
+Declining a turn, resting, unavailable courts, manual override (with a reason, recorded in the log) and "court stays open" work the same in every style, and every assignment in the rotation log records the style used.
 - Mark a court **unavailable** (for example wet or reserved) and it is skipped until you mark it available again.
 
 ## 4. Scoring and undo

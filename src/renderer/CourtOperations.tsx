@@ -1,24 +1,170 @@
 import { useCallback, useEffect, useState } from 'react';
-import { isGroupingStyle, settingsForTeamUp, teamUpOf, type QueueEntry, type Recommendation, type RecommendationResult, type RotationSettings, type TeamUpStyle } from '../core/rotation';
-import { FUTURE_TEAM_UPS, TEAM_UP_CHOICES } from './teamUpOptions';
-import type { ApiResult } from '../shared/api';
+import {
+  DEFAULT_CHALLENGE_SETTINGS,
+  DEFAULT_POOL_SETTINGS,
+  isGroupingStyle,
+  poolOfPlayer,
+  POOL_NAMES,
+  poolSettingsOf,
+  settingsForTeamUp,
+  teamUpOf,
+  type PoolName,
+  type PoolSettings,
+  type QueueEntry,
+  type Recommendation,
+  type RecommendationResult,
+  type RotationSettings,
+  type TeamUpStyle,
+} from '../core/rotation';
+import { guideFor } from './teamUpOptions';
+import type { ApiResult, PlayerDetails } from '../shared/api';
 import type { Court, Game, Player, RosterEntry } from '../data/types';
 import { Avatar } from './ui/Avatar';
+import { useToast } from './ui/Toasts';
+import { TeamUpPicker, type GuideContext, type RosterFix } from './TeamUpPicker';
+import { RoundRobinPanel } from './RoundRobin';
 
 interface Props {
   sessionId: string;
+  sessionName: string;
   courts: Court[];
   roster: RosterEntry[];
   games: Game[];
   readOnly: boolean;
+  /** D18 skill level, gender and pool by player id. */
+  details: Record<string, PlayerDetails>;
+  /** Opens the roster's player details editor (from the explanation window's shortcuts). */
+  onEditDetails: (focus: RosterFix) => void;
   /** Called after anything changed so the parent reloads the session. */
   onChanged: () => void;
+}
+
+/** D17 skill pools: where pools come from, which courts they use and what a short pool does. */
+function PoolsSettingsPanel({
+  settings,
+  courts,
+  counts,
+  readOnly,
+  onSave,
+}: {
+  settings: PoolSettings;
+  courts: Court[];
+  counts: Record<PoolName, number>;
+  readOnly: boolean;
+  onSave: (pools: PoolSettings) => void;
+}) {
+  const three = settings.cutoffB !== null;
+  const custom = Array.isArray(settings.courts);
+  const save = (patch: Partial<PoolSettings>) => onSave({ ...settings, ...patch });
+  const pools: PoolName[] = three ? ['A', 'B', 'C'] : ['A', 'B'];
+  return (
+    <div className="style-panel" aria-label="Skill pools settings">
+      <strong>Skill pools</strong>
+      <p className="hint">
+        Players now: {pools.map((p) => `pool ${p} ${counts[p]}`).join(' · ')}. Players with neither a pool nor a skill level go in pool B.
+      </p>
+      <div className="row">
+        <label>
+          Pools from{' '}
+          <select value={settings.source} disabled={readOnly} onChange={(e) => save({ source: e.target.value as PoolSettings['source'] })}>
+            <option value="manual">Each player&apos;s pool, else skill level</option>
+            <option value="skill">Skill level only</option>
+          </select>
+        </label>
+        <label>
+          Pool A from skill{' '}
+          <input
+            type="number"
+            className="skill-input"
+            min={1}
+            max={8}
+            step={0.25}
+            value={settings.cutoffA}
+            disabled={readOnly}
+            onChange={(e) => {
+              const v = Number(e.target.value);
+              if (Number.isFinite(v) && v >= 1 && v <= 8 && (settings.cutoffB === null || v > settings.cutoffB)) save({ cutoffA: v });
+            }}
+          />
+        </label>
+        <label>
+          <input type="checkbox" checked={three} disabled={readOnly} onChange={(e) => save({ cutoffB: e.target.checked ? Math.max(1, settings.cutoffA - 1) : null })} /> Use a third pool (C)
+        </label>
+        {three ? (
+          <label>
+            Pool B from skill{' '}
+            <input
+              type="number"
+              className="skill-input"
+              min={1}
+              max={8}
+              step={0.25}
+              value={settings.cutoffB ?? ''}
+              disabled={readOnly}
+              onChange={(e) => {
+                const v = Number(e.target.value);
+                if (Number.isFinite(v) && v >= 1 && v < settings.cutoffA) save({ cutoffB: v });
+              }}
+            />
+          </label>
+        ) : null}
+      </div>
+      <div className="row">
+        <label>
+          Courts{' '}
+          <select
+            value={custom ? 'custom' : (settings.courts as string)}
+            disabled={readOnly}
+            onChange={(e) => {
+              const v = e.target.value;
+              save({ courts: v === 'custom' ? courts.map((_, i) => (i === 0 ? 'A' : 'B')) : (v as 'auto' | 'alternate') });
+            }}
+          >
+            <option value="auto">Auto: by pool size, pool A on the top courts</option>
+            <option value="alternate">Alternate: pools take turns</option>
+            <option value="custom">Choose per court</option>
+          </select>
+        </label>
+        {custom
+          ? courts.map((c, i) => (
+              <label key={c.id}>
+                {c.label}{' '}
+                <select
+                  value={(settings.courts as PoolName[])[i] ?? 'A'}
+                  disabled={readOnly}
+                  onChange={(e) => {
+                    const next = courts.map((_, j) => (settings.courts as PoolName[])[j] ?? 'B');
+                    next[i] = e.target.value as PoolName;
+                    save({ courts: next });
+                  }}
+                >
+                  {pools.map((p) => (
+                    <option key={p} value={p}>
+                      Pool {p}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ))
+          : null}
+        <label>
+          When a pool is short{' '}
+          <select value={settings.whenShort} disabled={readOnly} onChange={(e) => save({ whenShort: e.target.value as PoolSettings['whenShort'] })}>
+            <option value="stay_open">Keep its court open (with the reason)</option>
+            <option value="borrow">Borrow players from another pool</option>
+          </select>
+        </label>
+      </div>
+    </div>
+  );
 }
 
 const minutesWaited = (ms: number): number => Math.floor(ms / 60000);
 
 /** Queue, per-court recommendations with their explanations, assign / override / decline. */
-export function CourtOperations({ sessionId, courts, roster, games, readOnly, onChanged }: Props) {
+export function CourtOperations({ sessionId, sessionName, courts, roster, games, readOnly, details, onEditDetails, onChanged }: Props) {
+  const notify = useToast();
+  const [showSchedule, setShowSchedule] = useState(false);
   const [queue, setQueue] = useState<QueueEntry[]>([]);
   const [result, setResult] = useState<RecommendationResult | null>(null);
   const [settings, setSettings] = useState<RotationSettings | null>(null);
@@ -89,6 +235,51 @@ export function CourtOperations({ sessionId, courts, roster, games, readOnly, on
   };
   const format = settings?.format ?? 'doubles';
   const needed = format === 'doubles' ? 4 : 2;
+  const guide = guideFor(style);
+
+  // D17/D18: what the explanation window and the style panels know about the roster
+  const present = roster.filter((e) => e.checkedInAt !== null && e.availability === 'available');
+  const basis = present.length > 0 ? present : roster;
+  const skillOf = (e: RosterEntry): number | null => details[e.playerId]?.skillLevel ?? e.player.skillLevel;
+  const missingSkill = basis.filter((e) => skillOf(e) === null);
+  const guideContext: GuideContext = {
+    players: basis.map((e) => ({ name: e.player.displayName, gender: details[e.playerId]?.gender ?? null, skill: skillOf(e) })),
+    playerCount: basis.length,
+    missingGender: basis.filter((e) => !details[e.playerId]?.gender).map((e) => e.player.displayName),
+    missingSkill: missingSkill.map((e) => e.player.displayName),
+    courtCount: courts.filter((c) => c.status === 'available').length,
+    pairCount: fixedPairs.length,
+    checkedInCount: present.length,
+  };
+  const genderCounts = {
+    female: present.filter((e) => details[e.playerId]?.gender === 'female').length,
+    male: present.filter((e) => details[e.playerId]?.gender === 'male').length,
+    unset: present.filter((e) => !details[e.playerId]?.gender).length,
+  };
+  const poolSettings: PoolSettings = settings ? poolSettingsOf(settings) : { ...DEFAULT_POOL_SETTINGS };
+  const poolCounts = Object.fromEntries(POOL_NAMES.map((p) => [p, 0])) as Record<PoolName, number>;
+  for (const e of present) {
+    const pool = details[e.playerId]?.pool;
+    poolCounts[poolOfPlayer({ skillLevel: skillOf(e), ...(pool ? { pool } : {}) }, poolSettings)] += 1;
+  }
+  const challenge = { ...DEFAULT_CHALLENGE_SETTINGS, ...(settings?.challenge ?? {}) };
+
+  /** Applies a style confirmed in the explanation window; round robin also makes the schedule and shows it. */
+  const applyStyle = async (next: TeamUpStyle): Promise<boolean> => {
+    const saved = await unwrap(window.openPlay.setRotationSettings(sessionId, settingsForTeamUp(next)));
+    if (!saved) return false;
+    let note = '';
+    if (next === 'round_robin') {
+      const made = await unwrap(window.openPlay.generateRoundRobin(sessionId));
+      if (made) {
+        note = ` Schedule ready: ${made.rounds.length} rounds.`;
+        setShowSchedule(true);
+      }
+    }
+    notify(`Team-up style: ${guideFor(next).title}.${note}`, { icon: guideFor(next).icon });
+    await changed();
+    return true;
+  };
   const override = async () => {
     const half = needed / 2;
     const ok = await unwrap(
@@ -212,19 +403,10 @@ export function CourtOperations({ sessionId, courts, roster, games, readOnly, on
         <summary>Game settings and manual override</summary>
       {settings ? (
         <div>
-          <label>
-            Team-up style{' '}
-            <select value={style} disabled={readOnly} onChange={(e) => void toggleSetting(settingsForTeamUp(e.target.value as TeamUpStyle))}>
-              {TEAM_UP_CHOICES.map((c) => (
-                <option key={c.value} value={c.value}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
-          </label>
+          <TeamUpPicker value={style} disabled={readOnly} context={guideContext} onFixRoster={onEditDetails} onApply={applyStyle} />
           <p className="hint">
-            {TEAM_UP_CHOICES.find((c) => c.value === style)?.hint}
-            {grouping ? ' Who plays is always decided by the balanced-games rule (fewest games first), so everyone gets the same number of games.' : ''}
+            {guide.hint}
+            {grouping ? ` ${guide.fairness}` : ''}
           </p>
           {style === 'fixed_partners' ? (
             <div className="fixed-pairs">
@@ -266,7 +448,83 @@ export function CourtOperations({ sessionId, courts, roster, games, readOnly, on
               </div>
             </div>
           ) : null}
-          <p className="hint">Coming later (not selectable yet): {FUTURE_TEAM_UPS.join(' · ')}.</p>
+          {style === 'mixed' ? (
+            <div className="style-panel" aria-label="Mixed doubles players">
+              <strong>Mixed doubles</strong>
+              <p className="hint">
+                Checked in: {genderCounts.female} women · {genderCounts.male} men · {genderCounts.unset} not set.
+                {genderCounts.unset > 0 ? ' Players without a gender fill in on either side.' : ''}
+              </p>
+              {genderCounts.unset > 0 ? (
+                <button className="secondary" onClick={() => onEditDetails('genders')}>
+                  Set genders
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+          {style === 'mentor' ? (
+            <div className="style-panel" aria-label="Mentor pairing players">
+              <strong>Mentor pairing</strong>
+              <p className="hint">
+                {present.length - missingSkill.length} of {present.length} checked-in players have a skill level; unrated players count as the middle level.
+              </p>
+              {missingSkill.length > 0 ? (
+                <button className="secondary" onClick={() => onEditDetails('skills')}>
+                  Set skill levels
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+          {style === 'pools' ? (
+            <PoolsSettingsPanel settings={poolSettings} courts={courts} counts={poolCounts} readOnly={readOnly} onSave={(pools) => void toggleSetting({ pools })} />
+          ) : null}
+          {style === 'challenge' ? (
+            <div className="style-panel" aria-label="Challenge court settings">
+              <strong>Challenge court</strong>
+              <div className="row">
+                <label>
+                  Winners stay on for up to{' '}
+                  <select
+                    value={challenge.cap}
+                    disabled={readOnly}
+                    onChange={(e) => void toggleSetting({ challenge: { ...challenge, cap: Number(e.target.value) } })}
+                  >
+                    {[1, 2, 3].map((n) => (
+                      <option key={n} value={n}>
+                        {n} {n === 1 ? 'game' : 'games'} in a row
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Challenge court{' '}
+                  <select
+                    value={challenge.courts}
+                    disabled={readOnly}
+                    onChange={(e) => void toggleSetting({ challenge: { ...challenge, courts: e.target.value as 'first' | 'all' } })}
+                  >
+                    <option value="first">{courts[0]?.label ?? 'Court 1'} only</option>
+                    <option value="all">Every court</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+          ) : null}
+          {style === 'round_robin' ? (
+            <RoundRobinPanel
+              sessionId={sessionId}
+              sessionName={sessionName}
+              courts={courts}
+              names={names}
+              presentCount={present.length}
+              format={format}
+              readOnly={readOnly}
+              version={`${games.length}:${games.filter((g) => g.status === 'in_progress').length}:${roster.length}:${present.length}`}
+              showSchedule={showSchedule}
+              onShowSchedule={setShowSchedule}
+              onChanged={() => void changed()}
+            />
+          ) : null}
         </div>
       ) : null}
       {settings ? (

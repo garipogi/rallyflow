@@ -19,9 +19,10 @@ export type FairnessMode = 'wait_time' | 'balanced_games';
 export const FAIRNESS_MODES: readonly FairnessMode[] = ['wait_time', 'balanced_games'];
 
 /**
- * D16 team-up style: how the players who are due to play are grouped into teams and courts.
- * Who plays is always the balanced-games rule (D14) in the four grouping styles; the two original
- * behaviours stay available under their own names.
+ * D16/D17 team-up style: how the players who are due to play are grouped into teams and courts.
+ * Who plays is the balanced-games rule (D14) in every grouping style, except the two bounded
+ * exceptions D17 documents (challenge court holders up to the cap; round robin follows its schedule
+ * with fairly rotating byes); the two original behaviours stay available under their own names.
  * - balanced: D14 balanced_games with partner variety (the recommended default).
  * - longest_wait: the original D2 waiting-time queue.
  * - random: a sit-out wheel (nobody plays twice before everyone has played once this cycle) with
@@ -29,16 +30,131 @@ export const FAIRNESS_MODES: readonly FairnessMode[] = ['wait_time', 'balanced_g
  * - paddle_stack: winners play winners, losers play losers; partners are split up.
  * - river: up and down the river (king of the court): winners move up a court, losers move down.
  * - fixed_partners: locked pairs always play together; everyone else is paired by the balanced rule.
+ * - mixed (D17): each doubles team is one man and one woman when the players due to play allow it.
+ * - pools (D17): players are in skill pools (A/B/C); courts belong to a pool or alternate.
+ * - round_robin (D17): a generated, printable schedule where everyone partners everyone as evenly
+ *   as possible; byes rotate fairly.
+ * - mentor (D17): one higher-rated and one lower-rated player on each team.
+ * - challenge (D17): winners stay on the challenge court for up to `challenge.cap` games in a row.
+ * - swiss (D17): players with similar session records play each other, avoiding rematches.
  */
-export type TeamUpStyle = 'balanced' | 'longest_wait' | 'random' | 'paddle_stack' | 'river' | 'fixed_partners';
+export type TeamUpStyle =
+  | 'balanced'
+  | 'longest_wait'
+  | 'random'
+  | 'paddle_stack'
+  | 'river'
+  | 'fixed_partners'
+  | 'mixed'
+  | 'pools'
+  | 'round_robin'
+  | 'mentor'
+  | 'challenge'
+  | 'swiss';
 
-export const TEAM_UP_STYLES: readonly TeamUpStyle[] = ['balanced', 'longest_wait', 'random', 'paddle_stack', 'river', 'fixed_partners'];
+export const TEAM_UP_STYLES: readonly TeamUpStyle[] = [
+  'balanced',
+  'longest_wait',
+  'random',
+  'paddle_stack',
+  'river',
+  'fixed_partners',
+  'mixed',
+  'pools',
+  'round_robin',
+  'mentor',
+  'challenge',
+  'swiss',
+];
 
-/** The four styles handled by the team-up engine (teamups.ts); the other two run the original recommend(). */
-export type GroupingStyle = Exclude<TeamUpStyle, 'balanced' | 'longest_wait'>;
+/** The four D16 grouping styles handled by teamups.ts. */
+export type ClassicGroupingStyle = 'random' | 'paddle_stack' | 'river' | 'fixed_partners';
+
+/** The six D17 styles handled by teamups-advanced.ts. */
+export type AdvancedStyle = 'mixed' | 'pools' | 'round_robin' | 'mentor' | 'challenge' | 'swiss';
+
+export const ADVANCED_STYLES: readonly AdvancedStyle[] = ['mixed', 'pools', 'round_robin', 'mentor', 'challenge', 'swiss'];
+
+/** Every style except the two original engines; who plays is balanced games (or a documented D17 exception). */
+export type GroupingStyle = ClassicGroupingStyle | AdvancedStyle;
 
 export function isGroupingStyle(style: TeamUpStyle): style is GroupingStyle {
   return style !== 'balanced' && style !== 'longest_wait';
+}
+
+export function isAdvancedStyle(style: TeamUpStyle): style is AdvancedStyle {
+  return (ADVANCED_STYLES as readonly string[]).includes(style);
+}
+
+/** D18 player profile: optional gender for mixed doubles. */
+export type Gender = 'male' | 'female';
+export const GENDERS: readonly Gender[] = ['male', 'female'];
+
+/** D17/D18 skill pools: A = advanced, B = developing (or intermediate when C is used), C = developing. */
+export type PoolName = 'A' | 'B' | 'C';
+export const POOL_NAMES: readonly PoolName[] = ['A', 'B', 'C'];
+
+/** D17 skill pools settings (all optional on the session; DEFAULT_POOL_SETTINGS fills the gaps). */
+export interface PoolSettings {
+  /**
+   * manual: a player's own pool from the roster, else their skill level against the cutoffs;
+   * skill: only the skill level against the cutoffs. Players with neither go in pool B.
+   */
+  source: 'manual' | 'skill';
+  /** Skill level at or above which a player is in pool A. */
+  cutoffA: number;
+  /** null = two pools (A and B). A number = three pools: at or above it (below cutoffA) is B, lower is C. */
+  cutoffB: number | null;
+  /**
+   * auto: courts split by pool size with pool A on the top courts (alternate when there are fewer
+   * courts than pools); alternate: every court takes the pool whose next player is most due;
+   * a list: the pool of each court in court order (courts past the end of the list alternate).
+   */
+  courts: 'auto' | 'alternate' | PoolName[];
+  /** When a pool cannot fill its court: keep the court open with a reason (default), or borrow the most-due players of another pool. */
+  whenShort: 'stay_open' | 'borrow';
+}
+
+export const DEFAULT_POOL_SETTINGS: Readonly<PoolSettings> = {
+  source: 'manual',
+  cutoffA: 3.5,
+  cutoffB: null,
+  courts: 'auto',
+  whenShort: 'stay_open',
+};
+
+/** D17 challenge court settings. */
+export interface ChallengeSettings {
+  /** The most games in a row a winning team may stay on for (1-3). */
+  cap: number;
+  /** first: only the first court in play is the challenge court; all: every court. */
+  courts: 'first' | 'all';
+}
+
+export const DEFAULT_CHALLENGE_SETTINGS: Readonly<ChallengeSettings> = { cap: 2, courts: 'first' };
+
+/** D17 round robin: one scheduled game (team A plays team B). */
+export interface RoundRobinGame {
+  teamA: string[];
+  teamB: string[];
+}
+
+export interface RoundRobinRound {
+  games: RoundRobinGame[];
+  /** Players who sit out this round. */
+  byes: string[];
+}
+
+/** D17 round robin schedule, generated for the players present and stored with the session's settings. */
+export interface RoundRobinSchedule {
+  id: string;
+  createdAt: string;
+  format: GameFormat;
+  /** Games per round = the courts in play when it was generated (fewer when players are short). */
+  courtCount: number;
+  /** The players it was generated for, in roster order. */
+  playerIds: string[];
+  rounds: RoundRobinRound[];
 }
 
 export interface RotationSettings {
@@ -52,6 +168,12 @@ export interface RotationSettings {
   teamUp?: TeamUpStyle;
   /** D16 fixed_partners: locked pairs of player ids. A player is in at most one pair. */
   fixedPairs?: string[][];
+  /** D17 pools: how players are put in pools and courts in pools. Absent = DEFAULT_POOL_SETTINGS. */
+  pools?: Partial<PoolSettings>;
+  /** D17 challenge court: the stay-on cap and which courts. Absent = DEFAULT_CHALLENGE_SETTINGS. */
+  challenge?: Partial<ChallengeSettings>;
+  /** D17 round robin: the current schedule (generated on request). */
+  roundRobin?: RoundRobinSchedule;
 }
 
 export const DEFAULT_ROTATION_SETTINGS: RotationSettings = {
@@ -129,6 +251,10 @@ export interface QueuePlayer {
    * gamesPlayed when ranking so they do not play many games in a row on arrival.
    */
   gameCredit?: number;
+  /** D18 mixed doubles: absent = not set (counts as flexible). */
+  gender?: Gender;
+  /** D18 skill pools: the pool set by the organizer (absent = derived from the skill level). */
+  pool?: PoolName;
 }
 
 export interface QueueEntry {
@@ -161,6 +287,9 @@ export interface PastGame {
   courtId?: string;
   startedAt?: string | null;
   endedAt?: string | null;
+  /** D17 Swiss: final scores when known (point difference). */
+  scoreA?: number | null;
+  scoreB?: number | null;
 }
 
 export interface RotationInput {
@@ -171,6 +300,22 @@ export interface RotationInput {
   pastGames?: readonly PastGame[];
   /** Varies the balanced_games tie draw between sessions (the data layer passes the session id). */
   seed?: string;
+  /** D17 round robin: scheduled games already started, as scheduleGameKey(scheduleId, round, game). */
+  scheduleStarted?: readonly string[];
+  /** D17 round robin: started scheduled games that are still being played (same keys). */
+  scheduleInProgress?: readonly string[];
+}
+
+/** D17 round robin: the key of one scheduled game, used to track which games have started. */
+export function scheduleGameKey(scheduleId: string, round: number, game: number): string {
+  return `${scheduleId}:${round}:${game}`;
+}
+
+/** D17 round robin: which scheduled game a recommendation plays (round and game are 0-based). */
+export interface ScheduleRef {
+  scheduleId: string;
+  round: number;
+  game: number;
 }
 
 export interface PlayerReason {
@@ -200,6 +345,8 @@ export interface Recommendation {
   explanation: string;
   /** D16: the team-up style that grouped this game (absent for games from the original engine). */
   teamUp?: TeamUpStyle;
+  /** D17 round robin: the scheduled game this recommendation plays. */
+  schedule?: ScheduleRef;
 }
 
 export interface OpenCourt {

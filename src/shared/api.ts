@@ -1,4 +1,6 @@
-import type { QueueEntry, Recommendation, RecommendationResult, RotationSettings, TeamUpStyle } from '../core/rotation';
+import type { Gender, PoolName, QueueEntry, Recommendation, RecommendationResult, RotationSettings, RoundRobinSchedule, TeamUpStyle } from '../core/rotation';
+import type { PlayerDetails, PlayerDetailsPatch } from '../data/profiles';
+import type { RoundRobinStatus } from '../data/rotation';
 import type { GameState, ScoreLog, ScoringEvent, TeamId } from '../core/scoring';
 import type { AwardLibrary, AwardsReport, AwardsScope } from '../data/awards';
 import type { AwardLineup, AwardPick, AwardPicks } from '../core/awards/lineup';
@@ -55,7 +57,13 @@ export interface NewRosterPlayerInput {
   displayName: string;
   nickname?: string | null;
   allowDuplicateName?: boolean;
+  /** D18: optional skill level (1-8), gender and pool, saved with the new player. */
+  skillLevel?: number | null;
+  gender?: Gender | null;
+  pool?: PoolName | null;
 }
+
+export type { PlayerDetails, PlayerDetailsPatch, RoundRobinStatus };
 
 /** Everything the organizer window may ask the main process to do. */
 export interface OrganizerApi {
@@ -84,6 +92,10 @@ export interface OrganizerApi {
   removePlayer(sessionId: string, playerId: string): Promise<ApiResult<null>>;
   /** Edits a player's name and nickname; the id (and so all history) is unchanged. */
   renamePlayer(playerId: string, input: RenamePlayerInput): Promise<ApiResult<Player>>;
+  /** D18: skill level, gender and pool of every player, by player id. */
+  listPlayerDetails(): Promise<ApiResult<Record<string, PlayerDetails>>>;
+  /** D18: saves a player's skill level, gender and/or pool (absent = unchanged, null = clear). */
+  updatePlayerDetails(playerId: string, patch: PlayerDetailsPatch): Promise<ApiResult<PlayerDetails>>;
   startScoring(
     gameId: string,
     opts: { firstServingTeam: TeamId; targetScore?: number; winBy?: number },
@@ -103,6 +115,12 @@ export interface OrganizerApi {
   assignRecommendation(sessionId: string, recommendation: Recommendation): Promise<ApiResult<Game>>;
   assignManually(sessionId: string, input: ManualAssignmentInput): Promise<ApiResult<Game>>;
   declineTurn(sessionId: string, playerId: string): Promise<ApiResult<QueueEntry[]>>;
+  /** D17: generates (or regenerates) the round-robin schedule for the players and courts here now. */
+  generateRoundRobin(sessionId: string, opts?: { rounds?: number }): Promise<ApiResult<RoundRobinSchedule>>;
+  /** D17: the schedule, its progress and roster changes since it was made. */
+  getRoundRobinStatus(sessionId: string): Promise<ApiResult<RoundRobinStatus>>;
+  /** D17: saves the printable schedule shown in the organizer window as a PDF; null when cancelled. */
+  saveSchedulePdf(sessionId: string): Promise<ApiResult<string | null>>;
   getSessionLeaderboard(sessionId: string): Promise<ApiResult<PlayerLeaderboardRow[]>>;
   getHistoricalLeaderboard(): Promise<ApiResult<PlayerLeaderboardRow[]>>;
   /** Asks where to save (a folder for CSV, a file for XLSX); `value` is null when the organizer cancels. */
@@ -221,6 +239,8 @@ export const API_METHODS: readonly ApiMethod[] = [
   'setAvailability',
   'removePlayer',
   'renamePlayer',
+  'listPlayerDetails',
+  'updatePlayerDetails',
   'startScoring',
   'recordScoringEvent',
   'undoLastScoringEvent',
@@ -236,6 +256,9 @@ export const API_METHODS: readonly ApiMethod[] = [
   'assignRecommendation',
   'assignManually',
   'declineTurn',
+  'generateRoundRobin',
+  'getRoundRobinStatus',
+  'saveSchedulePdf',
   'getSessionLeaderboard',
   'getHistoricalLeaderboard',
   'exportData',

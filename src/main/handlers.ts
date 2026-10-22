@@ -6,8 +6,10 @@ import {
   assignManually,
   assignRecommendation,
   declineTurn,
+  generateRoundRobinSchedule,
   getQueue,
   getRotationSettings,
+  getRoundRobinStatus,
   recommendNextGames,
   setRotationSettings,
 } from '../data/rotation';
@@ -30,6 +32,7 @@ import {
   undoLastScoringEvent,
 } from '../data/scoring';
 import { listPlayers, renamePlayer } from '../data/players';
+import { listPlayerDetails, updatePlayerDetails, type PlayerDetailsPatch } from '../data/profiles';
 import {
   addNewPlayerToSession,
   addPlayerToSession,
@@ -83,6 +86,7 @@ type SyncHandlerName = Exclude<
   | 'showCourtsOnDisplay'
   | 'saveAwardsImage'
   | 'saveCertificates'
+  | 'saveSchedulePdf'
   | 'setAppearance'
   | 'runCeremonyOnDisplay'
   | 'endCeremonyOnDisplay'
@@ -203,8 +207,25 @@ function createDbHandlers(db: Db): { [K in SyncHandlerName]: (...args: unknown[]
     setCourtStatus: (id, status) => run(() => setCourtStatus(db, id as string, status as 'available' | 'unavailable')),
     listPlayers: () => run(() => listPlayers(db)),
     addExistingPlayer: (sid, pid) => run(() => addPlayerToSession(db, sid as string, pid as string)),
+    // D18: skill level, gender and pool from the add-player row are saved with the new player
     addNewPlayer: (id, input) =>
-      run(() => addNewPlayerToSession(db, id as string, input as Parameters<OrganizerApi['addNewPlayer']>[1])),
+      run(() =>
+        withTransaction(db, () => {
+          const typed = input as Parameters<OrganizerApi['addNewPlayer']>[1];
+          const { skillLevel, gender, pool, ...rest } = typed;
+          const entry = addNewPlayerToSession(db, id as string, rest);
+          const patch: PlayerDetailsPatch = {
+            ...(skillLevel !== undefined && skillLevel !== null ? { skillLevel } : {}),
+            ...(gender !== undefined && gender !== null ? { gender } : {}),
+            ...(pool !== undefined && pool !== null ? { pool } : {}),
+          };
+          if (Object.keys(patch).length === 0) return entry;
+          const details = updatePlayerDetails(db, entry.playerId, patch);
+          return { ...entry, player: { ...entry.player, skillLevel: details.skillLevel } };
+        }),
+      ),
+    listPlayerDetails: () => run(() => listPlayerDetails(db)),
+    updatePlayerDetails: (pid, patch) => run(() => updatePlayerDetails(db, pid as string, (patch ?? {}) as PlayerDetailsPatch)),
     checkInPlayer: (sid, pid) => run(() => checkInPlayer(db, sid as string, pid as string)),
     setAvailability: (sid, pid, a) =>
       run(() => setAvailability(db, sid as string, pid as string, a as 'available' | 'resting' | 'unavailable')),
@@ -241,6 +262,12 @@ function createDbHandlers(db: Db): { [K in SyncHandlerName]: (...args: unknown[]
     assignManually: (sid, input) =>
       run(() => assignManually(db, sid as string, input as Parameters<OrganizerApi['assignManually']>[1])),
     declineTurn: (sid, pid) => run(() => declineTurn(db, sid as string, pid as string)),
+    generateRoundRobin: (sid, opts) =>
+      run(() => {
+        const rounds = (opts as { rounds?: unknown } | undefined)?.rounds;
+        return generateRoundRobinSchedule(db, sid as string, typeof rounds === 'number' ? { rounds } : {});
+      }),
+    getRoundRobinStatus: (sid) => run(() => getRoundRobinStatus(db, sid as string)),
     getAppearance: () => run(() => getAppearance(db)),
     getAwardLineup: () => run(() => getAwardLineup(db)),
     setAwardLineup: (lineup) => run(() => setAwardLineup(db, lineup)),
@@ -377,6 +404,19 @@ export function createApiHandlers(store: DbStore, host: HostServices): Handlers 
       runAsync(async () => {
         const pdf = await requireHost(host.printOrganizerPdf, 'Saving certificates')();
         const file = await host.chooseSaveFile('Save award certificates', `${FILE_PREFIX}-certificates-${stamp()}.pdf`, 'pdf');
+        if (file === null) return null;
+        writeFileSync(file, pdf);
+        return file;
+      }),
+
+    // D17: the renderer shows the printable schedule, then the window's print layout is saved as PDF
+    saveSchedulePdf: (sid) =>
+      runAsync(async () => {
+        const session = getSession(store.current(), sid as string);
+        if (!session) throw new ValidationError(`Unknown session: ${String(sid)}`);
+        if (!getRotationSettings(store.current(), session.id).roundRobin) throw new ValidationError('Generate a round-robin schedule first.');
+        const pdf = await requireHost(host.printOrganizerPdf, 'Saving the schedule')();
+        const file = await host.chooseSaveFile('Save round-robin schedule', `${FILE_PREFIX}-round-robin-${slug(session.name)}-${stamp()}.pdf`, 'pdf');
         if (file === null) return null;
         writeFileSync(file, pdf);
         return file;

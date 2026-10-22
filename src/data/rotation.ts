@@ -2,9 +2,14 @@ import {
   applyDecline,
   assertValidDeclinePolicy,
   catchUpCredits,
+  DEFAULT_POOL_SETTINGS,
   DEFAULT_ROTATION_SETTINGS,
   FAIRNESS_MODES,
   fairnessOf,
+  generateRoundRobin,
+  MAX_ROUND_ROBIN_ROUNDS,
+  POOL_NAMES,
+  scheduleGameKey,
   isGroupingStyle,
   orderQueue,
   recommend,
@@ -22,7 +27,9 @@ import {
   type Recommendation,
   type RecommendationResult,
   type RotationSettings,
+  type RoundRobinSchedule,
 } from '../core/rotation';
+import { listPlayerProfiles } from './profiles';
 import type { Db } from './db';
 import { withTransaction } from './db';
 import { ValidationError } from './errors';
@@ -94,6 +101,9 @@ function validateSettings(settings: RotationSettings): void {
     throw new ValidationError(`Unknown team-up style: ${String(settings.teamUp)}`);
   }
   if (settings.fixedPairs !== undefined) validateFixedPairs(settings.fixedPairs);
+  if (settings.pools !== undefined) validatePools(settings.pools);
+  if (settings.challenge !== undefined) validateChallenge(settings.challenge);
+  if (settings.roundRobin !== undefined) validateRoundRobin(settings.roundRobin);
   try {
     assertValidDeclinePolicy(settings.declinePolicy);
   } catch (err) {
@@ -116,6 +126,72 @@ function validateFixedPairs(pairs: unknown): void {
       if (seen.has(id)) throw new ValidationError('A player can be in only one fixed pair.');
       seen.add(id);
     }
+  }
+}
+
+const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
+const finiteIn = (v: unknown, lo: number, hi: number): boolean => typeof v === 'number' && Number.isFinite(v) && v >= lo && v <= hi;
+
+/** D17 skill pools: known keys only, cutoffs 1-8 with B below A, courts auto/alternate/a list of pools. */
+function validatePools(pools: unknown): void {
+  if (!isObject(pools)) throw new ValidationError('Pool settings must be an object.');
+  const { source, cutoffA, cutoffB, courts, whenShort } = pools;
+  if (source !== undefined && source !== 'manual' && source !== 'skill') throw new ValidationError('Pools come from the roster (manual) or from skill levels (skill).');
+  if (cutoffA !== undefined && !finiteIn(cutoffA, 1, 8)) throw new ValidationError('The pool A cutoff must be a skill level from 1 to 8.');
+  if (cutoffB !== undefined && cutoffB !== null) {
+    if (!finiteIn(cutoffB, 1, 8)) throw new ValidationError('The pool B cutoff must be a skill level from 1 to 8.');
+    const a = typeof cutoffA === 'number' ? cutoffA : DEFAULT_POOL_SETTINGS.cutoffA;
+    if ((cutoffB as number) >= a) throw new ValidationError('The pool B cutoff must be below the pool A cutoff.');
+  }
+  if (courts !== undefined && courts !== 'auto' && courts !== 'alternate') {
+    if (!Array.isArray(courts) || courts.length > 8 || !courts.every((c) => (POOL_NAMES as readonly unknown[]).includes(c))) {
+      throw new ValidationError('Court pools must be auto, alternate, or one pool (A, B or C) per court.');
+    }
+  }
+  if (whenShort !== undefined && whenShort !== 'stay_open' && whenShort !== 'borrow') {
+    throw new ValidationError('When a pool is short the court stays open or borrows players.');
+  }
+}
+
+/** D17 challenge court: cap 1-3 games in a row, on the first court or all courts. */
+function validateChallenge(challenge: unknown): void {
+  if (!isObject(challenge)) throw new ValidationError('Challenge court settings must be an object.');
+  const { cap, courts } = challenge;
+  if (cap !== undefined && !(typeof cap === 'number' && Number.isInteger(cap) && cap >= 1 && cap <= 3)) {
+    throw new ValidationError('Winners can stay on for 1, 2 or 3 games in a row.');
+  }
+  if (courts !== undefined && courts !== 'first' && courts !== 'all') throw new ValidationError('The challenge court is the first court or every court.');
+}
+
+/** D17 round robin schedule shape: teams of the right size, nobody twice in a round. */
+function validateRoundRobin(schedule: unknown): void {
+  const bad = (why: string): never => {
+    throw new ValidationError(`Round-robin schedule: ${why}`);
+  };
+  if (!isObject(schedule)) bad('must be an object.');
+  const s = schedule as Record<string, unknown>;
+  if (typeof s.id !== 'string' || s.id === '' || typeof s.createdAt !== 'string') bad('missing id or creation time.');
+  if (s.format !== 'singles' && s.format !== 'doubles') bad('unknown format.');
+  if (!(typeof s.courtCount === 'number' && Number.isInteger(s.courtCount) && s.courtCount >= 1)) bad('needs at least one court.');
+  if (!Array.isArray(s.playerIds) || !s.playerIds.every((id) => typeof id === 'string')) bad('player list is malformed.');
+  if (!Array.isArray(s.rounds) || s.rounds.length > MAX_ROUND_ROBIN_ROUNDS) bad(`needs 0 to ${MAX_ROUND_ROBIN_ROUNDS} rounds.`);
+  const size = s.format === 'singles' ? 1 : 2;
+  for (const round of s.rounds as unknown[]) {
+    if (!isObject(round) || !Array.isArray(round.games) || !Array.isArray(round.byes)) bad('a round is malformed.');
+    const r = round as { games: unknown[]; byes: unknown[] };
+    const seen = new Set<string>();
+    const note = (id: unknown): void => {
+      if (typeof id !== 'string') bad('a player id is malformed.');
+      if (seen.has(id as string)) bad('a player appears twice in one round.');
+      seen.add(id as string);
+    };
+    for (const game of r.games) {
+      if (!isObject(game) || !Array.isArray(game.teamA) || !Array.isArray(game.teamB) || game.teamA.length !== size || game.teamB.length !== size) {
+        bad(`every ${s.format as string} team needs ${size} ${size === 1 ? 'player' : 'players'}.`);
+      }
+      for (const id of [...(game as { teamA: unknown[] }).teamA, ...(game as { teamB: unknown[] }).teamB]) note(id);
+    }
+    for (const id of r.byes) note(id);
   }
 }
 
@@ -214,6 +290,8 @@ function loadPlayers(db: Db, sessionId: string): QueuePlayer[] {
   );
 
   const { latest, thisTurn } = declineState(db, sessionId);
+  // D18 gender and pool for mixed doubles and skill pools
+  const profiles = listPlayerProfiles(db);
   // eligibility time: latest of check-in (D3), end of their last game (D5) and a decline that came after both (D1)
   const eligible = new Map<string, string>();
   const placeAfter = new Map<string, string>();
@@ -246,6 +324,8 @@ function loadPlayers(db: Db, sessionId: string): QueuePlayer[] {
       declinedCurrentTurn: status === 'waiting' && thisTurn.has(id),
       ...(anchorStillThere ? { placeAfter: anchor } : {}),
       ...((credits.get(id) ?? 0) > 0 ? { gameCredit: credits.get(id) as number } : {}),
+      ...(profiles[id]?.gender ? { gender: profiles[id]?.gender ?? undefined } : {}),
+      ...(profiles[id]?.pool ? { pool: profiles[id]?.pool ?? undefined } : {}),
     };
   });
 }
@@ -295,7 +375,35 @@ function pastGamesOf(db: Db, sessionId: string): PastGame[] {
       courtId: g.courtId,
       startedAt: g.startedAt,
       endedAt: g.status === 'completed' || g.status === 'incomplete' ? g.endedAt : null,
+      // D17 Swiss: point difference
+      ...(g.status === 'completed' ? { scoreA: g.teamAScore, scoreB: g.teamBScore } : {}),
     }));
+}
+
+/** D17 round robin: scheduled games of the current schedule that have started (and were not cancelled). */
+function scheduleStartedOf(db: Db, sessionId: string, settings: RotationSettings): string[] {
+  return scheduleProgressOf(db, sessionId, settings).started;
+}
+
+/** D17 round robin: started scheduled games, and those of them still being played. */
+function scheduleProgressOf(db: Db, sessionId: string, settings: RotationSettings): { started: string[]; inProgress: string[] } {
+  const schedule = settings.roundRobin;
+  if (!schedule) return { started: [], inProgress: [] };
+  const games = listGames(db, sessionId);
+  const cancelled = new Set(games.filter((g) => g.status === 'cancelled').map((g) => g.id));
+  const running = new Set(games.filter((g) => g.status === 'in_progress' || g.status === 'scheduled').map((g) => g.id));
+  const keys: string[] = [];
+  const inProgress: string[] = [];
+  for (const ev of listRotationEvents(db, sessionId)) {
+    if (ev.type !== 'assigned') continue;
+    const ref = ev.data.schedule as { scheduleId?: unknown; round?: unknown; game?: unknown } | undefined;
+    if (!ref || ref.scheduleId !== schedule.id || typeof ref.round !== 'number' || typeof ref.game !== 'number') continue;
+    if (cancelled.has(ev.data.gameId as string)) continue;
+    const key = scheduleGameKey(schedule.id, ref.round, ref.game);
+    keys.push(key);
+    if (running.has(ev.data.gameId as string)) inProgress.push(key);
+  }
+  return { started: keys, inProgress };
 }
 
 /** Read-only: what the queue says should play next on each free court, with explanations. */
@@ -314,6 +422,83 @@ export function recommendNextGames(
     settings,
     pastGames: pastGamesOf(db, sessionId),
     seed: sessionId,
+    ...(() => {
+      const progress = scheduleProgressOf(db, sessionId, settings);
+      return { scheduleStarted: progress.started, scheduleInProgress: progress.inProgress };
+    })(),
+  });
+}
+
+// --------------------------------------------------------------- round robin
+
+export interface RoundRobinStatus {
+  schedule: RoundRobinSchedule | null;
+  /** Started scheduled games (scheduleGameKey). */
+  started: string[];
+  /** 0-based index of the first round with a game not started yet; equals rounds.length when done. */
+  currentRound: number;
+  /** Checked-in, available players who are not in the schedule (arrived after it was made). */
+  notInSchedule: string[];
+  /** Scheduled players who are no longer checked in and available (resting, gone, removed). */
+  away: string[];
+}
+
+/** D17: the schedule with its progress and how the roster differs from the players it was made for. */
+export function getRoundRobinStatus(db: Db, sessionId: string): RoundRobinStatus {
+  const settings = getRotationSettings(db, sessionId);
+  const schedule = settings.roundRobin ?? null;
+  const players = loadPlayers(db, sessionId);
+  const present = players.filter((p) => p.status !== 'unavailable').map((p) => p.playerId);
+  if (!schedule) return { schedule: null, started: [], currentRound: 0, notInSchedule: present, away: [] };
+  const started = scheduleStartedOf(db, sessionId, settings);
+  const done = new Set(started);
+  let currentRound = schedule.rounds.findIndex((round, r) => round.games.some((_, g) => !done.has(scheduleGameKey(schedule.id, r, g))));
+  if (currentRound < 0) currentRound = schedule.rounds.length;
+  const inSchedule = new Set(schedule.playerIds);
+  return {
+    schedule,
+    started,
+    currentRound,
+    notInSchedule: present.filter((id) => !inSchedule.has(id)),
+    away: schedule.playerIds.filter((id) => !present.includes(id)),
+  };
+}
+
+/**
+ * D17: generates (or regenerates) the round-robin schedule for the checked-in, available players
+ * (including those on court) and the courts that are available now. Byes favour players with fewer
+ * games this session. Replaces any earlier schedule; progress starts again from round 1.
+ */
+export function generateRoundRobinSchedule(db: Db, sessionId: string, opts: { rounds?: number; at?: string } = {}): RoundRobinSchedule {
+  return withTransaction(db, () => {
+    assertSessionWritable(db, sessionId);
+    const at = opts.at ?? nowIso();
+    const settings = getRotationSettings(db, sessionId);
+    const players = loadPlayers(db, sessionId).filter((p) => p.status !== 'unavailable');
+    const courtCount = listCourts(db, sessionId).filter((c) => c.status === 'available').length;
+    if (courtCount === 0) throw new ValidationError('Mark at least one court available before generating a schedule.');
+    if (opts.rounds !== undefined && !(Number.isInteger(opts.rounds) && opts.rounds >= 1 && opts.rounds <= MAX_ROUND_ROBIN_ROUNDS)) {
+      throw new ValidationError(`Choose between 1 and ${MAX_ROUND_ROBIN_ROUNDS} rounds.`);
+    }
+    let schedule: RoundRobinSchedule;
+    try {
+      schedule = generateRoundRobin({
+        id: newId(),
+        createdAt: at,
+        playerIds: players.map((p) => p.playerId),
+        courtCount,
+        format: settings.format,
+        ...(opts.rounds !== undefined ? { rounds: opts.rounds } : {}),
+        seed: `${sessionId}\u0000${at}`,
+        initialGames: new Map(players.map((p) => [p.playerId, p.gamesPlayed + (p.gameCredit ?? 0)] as const)),
+      });
+    } catch (err) {
+      if (err instanceof RotationError) throw new ValidationError(err.message);
+      throw err;
+    }
+    setRotationSettings(db, sessionId, { roundRobin: schedule }, { at });
+    logEvent(db, sessionId, 'schedule_generated', { scheduleId: schedule.id, rounds: schedule.rounds.length, playerIds: [...schedule.playerIds], courtCount: schedule.courtCount }, at);
+    return schedule;
   });
 }
 
@@ -353,6 +538,7 @@ export function assignRecommendation(
         teamB: [...rec.teamB],
         explanation: rec.explanation,
         ...(rec.teamUp !== undefined ? { teamUp: rec.teamUp } : {}),
+        ...(rec.schedule !== undefined ? { schedule: { ...rec.schedule } } : {}),
       },
       at,
     );

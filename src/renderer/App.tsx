@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import type { ApiResult } from '../shared/api';
+import type { ApiResult, PlayerDetails } from '../shared/api';
 import type { Appearance } from '../shared/themes';
 import { AppearancePicker, useAppearance } from './AppearancePicker';
 import { Avatar } from './ui/Avatar';
@@ -10,8 +10,10 @@ import { CourtBoard } from './CourtBoard';
 import { CourtOperations } from './CourtOperations';
 import { Reports } from './Reports';
 import { Awards } from './Awards';
-import { COURT_CHOICES, TEAM_UP_CHOICES } from './teamUpOptions';
-import type { TeamUpStyle } from '../core/rotation';
+import { COURT_CHOICES } from './teamUpOptions';
+import type { Gender, PoolName, TeamUpStyle } from '../core/rotation';
+import { TeamUpPicker, type RosterFix } from './TeamUpPicker';
+import { GENDER_OPTIONS, levelText, parseSkill, PlayerDetailsEditor, POOL_OPTIONS } from './PlayerDetails';
 import type { Player, RosterEntry, Session, SessionState } from '../data/types';
 
 interface AppearanceControl {
@@ -109,16 +111,24 @@ interface RosterRowProps {
   sessionId: string;
   entry: RosterEntry;
   readOnly: boolean;
+  /** D18 skill level, gender and pool. */
+  details: PlayerDetails | undefined;
   onChanged: () => Promise<void>;
 }
 
 /** One roster line: check-in status, availability, inline name editing and removal. */
-function RosterRow({ sessionId, entry, readOnly, onChanged }: RosterRowProps) {
+function RosterRow({ sessionId, entry, readOnly, details, onChanged }: RosterRowProps) {
   const { error, matches, call, clear } = useAction();
   const [editing, setEditing] = useState(false);
   const [draftName, setDraftName] = useState(entry.player.displayName);
   const [draftNickname, setDraftNickname] = useState(entry.player.nickname ?? '');
+  const [draftSkill, setDraftSkill] = useState('');
+  const [draftGender, setDraftGender] = useState<'' | Gender>('');
+  const [draftPool, setDraftPool] = useState<'' | PoolName>('');
+  const [skillError, setSkillError] = useState<string | null>(null);
   const shownName = entry.player.displayName;
+  const skill = details?.skillLevel ?? entry.player.skillLevel;
+  const level = levelText(details ? { ...details, skillLevel: skill } : undefined);
 
   const act = async <T,>(promise: Promise<ApiResult<T>>) => {
     await call(promise);
@@ -128,10 +138,19 @@ function RosterRow({ sessionId, entry, readOnly, onChanged }: RosterRowProps) {
   const startEdit = () => {
     setDraftName(entry.player.displayName);
     setDraftNickname(entry.player.nickname ?? '');
+    setDraftSkill(skill !== null ? String(skill) : '');
+    setDraftGender(details?.gender ?? '');
+    setDraftPool(details?.pool ?? '');
+    setSkillError(null);
     setEditing(true);
   };
 
   const save = async (allowDuplicateName: boolean) => {
+    const parsedSkill = parseSkill(draftSkill);
+    if (parsedSkill === 'invalid') {
+      setSkillError('Skill level must be a number from 1 to 8, or empty.');
+      return;
+    }
     const saved = await call(
       window.openPlay.renamePlayer(entry.playerId, {
         displayName: draftName,
@@ -139,14 +158,24 @@ function RosterRow({ sessionId, entry, readOnly, onChanged }: RosterRowProps) {
         allowDuplicateName,
       }),
     );
-    if (saved) {
+    if (!saved) return;
+    const detailsSaved = await call(
+      window.openPlay.updatePlayerDetails(entry.playerId, {
+        skillLevel: parsedSkill,
+        gender: draftGender === '' ? null : draftGender,
+        pool: draftPool === '' ? null : draftPool,
+      }),
+    );
+    if (detailsSaved) {
+      setSkillError(null);
       setEditing(false);
-      await onChanged();
     }
+    await onChanged();
   };
 
   const cancel = () => {
     setEditing(false);
+    setSkillError(null);
     clear();
   };
 
@@ -177,6 +206,37 @@ function RosterRow({ sessionId, entry, readOnly, onChanged }: RosterRowProps) {
             <td className="muted-cell">{entry.player.nickname ?? ''}</td>
           </>
         )}
+        <td className="level-cell">
+          {editing ? (
+            <div className="level-edit">
+              <input
+                className="skill-input"
+                aria-label={`Skill level for ${shownName}`}
+                inputMode="decimal"
+                value={draftSkill}
+                onChange={(e) => setDraftSkill(e.target.value)}
+              />
+              <select aria-label={`Gender for ${shownName}`} value={draftGender} onChange={(e) => setDraftGender(e.target.value as '' | Gender)}>
+                {GENDER_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+              <select aria-label={`Pool for ${shownName}`} value={draftPool} onChange={(e) => setDraftPool(e.target.value as '' | PoolName)}>
+                {POOL_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : level !== '' ? (
+            <span className="level-chip">{level}</span>
+          ) : (
+            <span className="muted">-</span>
+          )}
+        </td>
         <td>
           {entry.checkedInAt === null ? (
             <span className="badge pending">not checked in</span>
@@ -219,7 +279,7 @@ function RosterRow({ sessionId, entry, readOnly, onChanged }: RosterRowProps) {
               >
                 {entry.availability === 'resting' ? 'Back from rest' : 'Rest'}
               </button>
-              <button className="secondary" aria-label={`Edit name of ${shownName}`} onClick={startEdit}>
+              <button className="secondary" aria-label={`Edit name and details of ${shownName}`} onClick={startEdit}>
                 Edit
               </button>
               <button
@@ -233,9 +293,16 @@ function RosterRow({ sessionId, entry, readOnly, onChanged }: RosterRowProps) {
           )}
         </td>
       </tr>
+      {skillError ? (
+        <tr>
+          <td colSpan={5}>
+            <p className="error">{skillError}</p>
+          </td>
+        </tr>
+      ) : null}
       {error ? (
         <tr>
-          <td colSpan={4}>
+          <td colSpan={5}>
             <p className="error">{error}</p>
             {editing && matches.length > 0 ? (
               <div className="banner">
@@ -274,12 +341,18 @@ function SessionRoom({
   const [state, setState] = useState<SessionState | null>(null);
   const [name, setName] = useState('');
   const [nickname, setNickname] = useState('');
+  const [newSkill, setNewSkill] = useState('');
+  const [newGender, setNewGender] = useState<'' | Gender>('');
+  const [details, setDetails] = useState<Record<string, PlayerDetails>>({});
+  const [detailsEditor, setDetailsEditor] = useState<{ focus: RosterFix | null } | null>(null);
 
   const refresh = useCallback(async () => {
     const loaded = await call(window.openPlay.loadSessionState(sessionId));
     if (loaded) setState(loaded);
     const players = await call(window.openPlay.listPlayers());
     if (players) setRegistry(players);
+    const profile = await call(window.openPlay.listPlayerDetails());
+    if (profile) setDetails(profile);
   }, [call, sessionId]);
 
   useEffect(() => {
@@ -325,19 +398,31 @@ function SessionRoom({
     </>
   );
 
+  const newSkillParsed = parseSkill(newSkill);
   const addPlayer = async (allowDuplicateName: boolean) => {
+    if (newSkillParsed === 'invalid') return;
     const entry = await call(
       window.openPlay.addNewPlayer(sessionId, {
         displayName: name,
         nickname: nickname.trim() === '' ? null : nickname,
         allowDuplicateName,
+        ...(newSkillParsed !== null ? { skillLevel: newSkillParsed } : {}),
+        ...(newGender !== '' ? { gender: newGender } : {}),
       }),
     );
     if (entry) {
       setName('');
       setNickname('');
+      setNewSkill('');
+      setNewGender('');
       await refresh();
     }
+  };
+
+  const saveDetails = async (playerId: string, patch: Parameters<typeof window.openPlay.updatePlayerDetails>[1]): Promise<boolean> => {
+    const saved = await call(window.openPlay.updatePlayerDetails(playerId, patch));
+    if (saved) setDetails((d) => ({ ...d, [playerId]: saved }));
+    return saved !== null;
   };
 
   const addExisting = async (playerId: string) => {
@@ -425,10 +510,13 @@ function SessionRoom({
 
       <CourtOperations
         sessionId={sessionId}
+        sessionName={session.name}
         courts={courts}
         roster={roster}
         games={games}
         readOnly={readOnly}
+        details={details}
+        onEditDetails={(focus) => setDetailsEditor({ focus })}
         onChanged={() => void refresh()}
       />
 
@@ -440,7 +528,23 @@ function SessionRoom({
         <span className="hint">
           {checkedIn} checked in · {roster.length - checkedIn} still to arrive
         </span>
+        {roster.length > 0 && !detailsEditor ? (
+          <button className="secondary" onClick={() => setDetailsEditor({ focus: null })}>
+            Player details (skill, gender, pool)
+          </button>
+        ) : null}
       </div>
+      {newSkillParsed === 'invalid' ? <p className="error">Skill level must be a number from 1 to 8, or empty.</p> : null}
+      {detailsEditor ? (
+        <PlayerDetailsEditor
+          roster={roster}
+          details={details}
+          readOnly={readOnly}
+          focus={detailsEditor.focus}
+          onSave={saveDetails}
+          onClose={() => setDetailsEditor(null)}
+        />
+      ) : null}
       <div className="row add-player">
         <label className="field">
           Player name
@@ -450,10 +554,31 @@ function SessionRoom({
           Nickname <span className="hint">(optional)</span>
           <input value={nickname} onChange={(e) => setNickname(e.target.value)} disabled={readOnly} />
         </label>
-        <button disabled={readOnly || name.trim() === ''} onClick={() => void addPlayer(false)}>
+        <label className="field field-narrow">
+          Skill <span className="hint">(1-8, optional)</span>
+          <input
+            className="skill-input"
+            inputMode="decimal"
+            value={newSkill}
+            onChange={(e) => setNewSkill(e.target.value)}
+            disabled={readOnly}
+            aria-invalid={newSkillParsed === 'invalid'}
+          />
+        </label>
+        <label className="field field-narrow">
+          Gender <span className="hint">(optional)</span>
+          <select value={newGender} onChange={(e) => setNewGender(e.target.value as '' | Gender)} disabled={readOnly}>
+            {GENDER_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button disabled={readOnly || name.trim() === '' || newSkillParsed === 'invalid'} onClick={() => void addPlayer(false)}>
           Add player
         </button>
-        <button className="secondary" disabled={readOnly || name.trim() === ''} onClick={() => void addPlayer(true)}>
+        <button className="secondary" disabled={readOnly || name.trim() === '' || newSkillParsed === 'invalid'} onClick={() => void addPlayer(true)}>
           Add as a different person with the same name
         </button>
       </div>
@@ -498,13 +623,14 @@ function SessionRoom({
             <tr>
               <th>Player</th>
               <th>Nickname</th>
+              <th>Level</th>
               <th>Status</th>
               <th />
             </tr>
           </thead>
           <tbody>
             {roster.map((entry) => (
-              <RosterRow key={entry.playerId} sessionId={sessionId} entry={entry} readOnly={readOnly} onChanged={refresh} />
+              <RosterRow key={entry.playerId} sessionId={sessionId} entry={entry} readOnly={readOnly} details={details[entry.playerId]} onChanged={refresh} />
             ))}
           </tbody>
         </table>
@@ -637,16 +763,16 @@ function AppBody({ initialAppearance }: { initialAppearance: Appearance }) {
               ))}
             </select>
           </label>
-          <label className="field">
-            Team-up style
-            <select value={teamUp} onChange={(e) => setTeamUp(e.target.value as TeamUpStyle)}>
-              {TEAM_UP_CHOICES.map((c) => (
-                <option key={c.value} value={c.value}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
-          </label>
+          <TeamUpPicker
+            value={teamUp}
+            layout="field"
+            newSession
+            context={null}
+            onApply={(style) => {
+              setTeamUp(style);
+              return true;
+            }}
+          />
           <button
             className="cta"
             disabled={name.trim() === ''}

@@ -21,6 +21,7 @@ import { opponentCounts, pairKey, partnershipCounts } from './history';
 import { assertUniqueIds, orderQueue, parseInstant } from './queue';
 import {
   playersNeeded,
+  type ClassicGroupingStyle,
   type CourtInput,
   type ExcludedPlayer,
   type GroupingStyle,
@@ -41,6 +42,12 @@ export const TEAM_UP_NAMES: Readonly<Record<GroupingStyle, string>> = {
   paddle_stack: 'Paddle stacking',
   river: 'Up & Down the River',
   fixed_partners: 'Fixed partners',
+  mixed: 'Mixed doubles',
+  pools: 'Skill pools',
+  round_robin: 'Round robin',
+  mentor: 'Mentor pairing',
+  challenge: 'Challenge court',
+  swiss: 'Swiss pairing',
 };
 
 // ------------------------------------------------------------------ history
@@ -58,7 +65,7 @@ export interface PlayerStanding {
   lastPartners: string[];
 }
 
-interface TimedGame {
+export interface TimedGame {
   game: PastGame;
   players: string[];
   startedMs: number | null;
@@ -70,7 +77,7 @@ function msOrNull(value: string | null | undefined, what: string): number | null
 }
 
 /** Games in the order they started (input order when start times are missing). */
-function chronological(pastGames: readonly PastGame[]): TimedGame[] {
+export function chronological(pastGames: readonly PastGame[]): TimedGame[] {
   const timed = pastGames.map((game, i) => ({
     game,
     players: [...game.teamA, ...game.teamB],
@@ -167,12 +174,12 @@ export function cyclePlayed(
 
 // ---------------------------------------------------------------- utilities
 
-function hashSeed(text: string): number {
+export function hashSeed(text: string): number {
   return tieDraw(text, '', 0);
 }
 
 /** Small deterministic generator (mulberry32). */
-function generator(seed: number): () => number {
+export function generator(seed: number): () => number {
   let s = seed >>> 0;
   return () => {
     s = (s + 0x6d2b79f5) >>> 0;
@@ -183,7 +190,7 @@ function generator(seed: number): () => number {
   };
 }
 
-function shuffled<T>(items: readonly T[], next: () => number): T[] {
+export function shuffled<T>(items: readonly T[], next: () => number): T[] {
   const out = [...items];
   for (let i = out.length - 1; i > 0; i--) {
     const j = Math.floor(next() * (i + 1));
@@ -192,22 +199,22 @@ function shuffled<T>(items: readonly T[], next: () => number): T[] {
   return out;
 }
 
-function chunk<T>(items: readonly T[], size: number): T[][] {
+export function chunk<T>(items: readonly T[], size: number): T[][] {
   const out: T[][] = [];
   for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
   return out;
 }
 
-function plural(n: number, word: string): string {
+export function plural(n: number, word: string): string {
   return `${n} ${word}${n === 1 ? '' : 's'}`;
 }
 
-function joinNames(names: readonly string[]): string {
+export function joinNames(names: readonly string[]): string {
   if (names.length <= 1) return names.join('');
   return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1] as string}`;
 }
 
-interface Teams {
+export interface Teams {
   teamA: string[];
   teamB: string[];
 }
@@ -221,10 +228,10 @@ function splitsOf(group: readonly string[]): Teams[] {
   }));
 }
 
-type Score = (t: Teams) => number;
+export type Score = (t: Teams) => number;
 
 /** Keeps the splits best on each criterion in turn; the seeded draw settles what is left. */
-function chooseSplit(group: readonly string[], criteria: readonly Score[], seed: string): Teams {
+export function chooseSplit(group: readonly string[], criteria: readonly Score[], seed: string): Teams {
   let candidates = splitsOf(group);
   for (const score of criteria) {
     const best = Math.min(...candidates.map(score));
@@ -236,7 +243,7 @@ function chooseSplit(group: readonly string[], criteria: readonly Score[], seed:
 
 // ------------------------------------------------------------------- engine
 
-interface Context {
+export interface Context {
   input: RotationInput;
   need: number;
   names: (id: string) => string;
@@ -250,7 +257,7 @@ interface Context {
   roundSeed: string;
 }
 
-function lastPartnerRepeats(ctx: Context): Score {
+export function lastPartnerRepeats(ctx: Context): Score {
   return (t) =>
     [t.teamA, t.teamB].reduce(
       (acc, team) => acc + (team.length === 2 && ctx.standing(team[0] as string).lastPartners.includes(team[1] as string) ? 1 : 0),
@@ -258,7 +265,7 @@ function lastPartnerRepeats(ctx: Context): Score {
     );
 }
 
-function historyRepeats(ctx: Context): Score {
+export function historyRepeats(ctx: Context): Score {
   return (t) =>
     [t.teamA, t.teamB].reduce(
       (acc, team) => acc + (team.length === 2 ? (ctx.partners.get(pairKey(team[0] as string, team[1] as string)) ?? 0) : 0),
@@ -266,7 +273,7 @@ function historyRepeats(ctx: Context): Score {
     );
 }
 
-function opponentRepeats(ctx: Context): Score {
+export function opponentRepeats(ctx: Context): Score {
   return (t) => t.teamA.reduce((acc, a) => acc + t.teamB.reduce((inner, b) => inner + (ctx.opponents.get(pairKey(a, b)) ?? 0), 0), 0);
 }
 
@@ -280,7 +287,7 @@ function stackImbalance(ctx: Context): Score {
 }
 
 /** Ladder rank of a court (0 = top). A court that is out of play ranks with the next court below it. */
-function rankOf(ctx: Context, courtId: string | null): number | null {
+export function rankOf(ctx: Context, courtId: string | null): number | null {
   if (courtId === null) return null;
   const at = ctx.input.courts.findIndex((c) => c.courtId === courtId);
   if (at < 0 || ctx.ladder.length === 0) return null;
@@ -317,7 +324,7 @@ function orderingFor(ctx: Context, style: GroupingStyle): QueueOrdering {
   return ordering;
 }
 
-function contextOf(input: RotationInput): Context {
+export function contextOf(input: RotationInput): Context {
   const pastGames = input.pastGames ?? [];
   const table = standings(pastGames);
   const nameMap = new Map(input.players.map((p) => [p.playerId, p.displayName] as const));
@@ -350,7 +357,7 @@ interface Planned {
 }
 
 /** D16 recommendations for a grouping style. Same result shape and guarantees as recommend(). */
-export function recommendTeamUps(input: RotationInput, style: GroupingStyle): RecommendationResult {
+export function recommendTeamUps(input: RotationInput, style: ClassicGroupingStyle): RecommendationResult {
   parseInstant(input.now, 'now');
   assertUniqueIds(
     input.courts.map((c) => c.courtId),
@@ -423,7 +430,7 @@ export function recommendTeamUps(input: RotationInput, style: GroupingStyle): Re
 }
 
 /** Random, paddle stacking, river (and fixed partners in singles): choose by the queue, then group. */
-function planGrouped(ctx: Context, style: GroupingStyle, free: readonly CourtInput[], eligible: readonly QueueEntry[]): Planned[] {
+function planGrouped(ctx: Context, style: ClassicGroupingStyle, free: readonly CourtInput[], eligible: readonly QueueEntry[]): Planned[] {
   const need = ctx.need;
   const k = Math.min(free.length, Math.floor(eligible.length / need));
   if (k === 0) return [];
@@ -658,7 +665,7 @@ function planFixedPartners(ctx: Context, free: readonly CourtInput[], eligible: 
 
 // -------------------------------------------------------------- explanations
 
-function minutes(ms: number): number {
+export function minutes(ms: number): number {
   return Math.floor(ms / 60000);
 }
 
@@ -690,7 +697,7 @@ function teamsText(ctx: Context, teams: Teams): string {
   return `${teams.teamA.map(ctx.names).join(' & ')} vs ${teams.teamB.map(ctx.names).join(' & ')}`;
 }
 
-function whoPlays(ctx: Context, style: GroupingStyle, chosen: readonly QueueEntry[]): string {
+function whoPlays(ctx: Context, style: ClassicGroupingStyle, chosen: readonly QueueEntry[]): string {
   const cycle =
     style === 'random' ? cyclePlayed(ctx.input.pastGames ?? [], ctx.input.players.filter((p) => p.status !== 'unavailable')) : null;
   const list = chosen
@@ -720,7 +727,7 @@ function partnerSplitText(ctx: Context, teams: Teams): string {
   return hadPartners ? ' Partners from the last game are split up.' : '';
 }
 
-function explainPlan(ctx: Context, style: GroupingStyle, p: Planned): string {
+function explainPlan(ctx: Context, style: ClassicGroupingStyle, p: Planned): string {
   const label = `${p.court.label} · ${TEAM_UP_NAMES[style]}`;
   const parts: string[] = [];
   const all = [...p.teams.teamA, ...p.teams.teamB];

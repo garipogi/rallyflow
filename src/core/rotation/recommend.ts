@@ -1,8 +1,10 @@
 import { opponentCounts, pairKey, partnershipCounts } from './history';
 import { assertUniqueIds, orderQueue, parseInstant } from './queue';
 import { recommendTeamUps } from './teamups';
+import { recommendAdvanced } from './teamups-advanced';
 import {
   fairnessOf,
+  isAdvancedStyle,
   isGroupingStyle,
   teamUpOf,
   playersNeeded,
@@ -132,6 +134,7 @@ export function recommend(input: RotationInput): RecommendationResult {
   // D16: the grouping styles have their own engine; 'balanced' and 'longest_wait' pin the fairness
   // mode they stand for. Without a teamUp setting nothing changes (D1-D7, D14).
   const style = teamUpOf(input.settings);
+  if (isAdvancedStyle(style)) return recommendAdvanced(input, style);
   if (isGroupingStyle(style)) return recommendTeamUps(input, style);
   if (input.settings.teamUp !== undefined) {
     const fairness = style === 'balanced' ? 'balanced_games' : 'wait_time';
